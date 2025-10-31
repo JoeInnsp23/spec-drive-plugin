@@ -1,0 +1,49 @@
+---
+id: SPEC-XXX
+title: "[Feature/Bug/Research] Brief Title"
+status: draft  # draft | specified | architected | implemented | verified | done
+created: {{DATE}}
+updated: {{DATE}}
+owner: "Team/Person"
+
+# What we're building and why
+summary: |
+  Brief description of what this spec covers and the business value.
+
+# Requirements (WHAT, not HOW)
+requirements:
+  user-stories:
+    - "As a [user], I want [goal] so that [benefit]"
+
+  acceptance-criteria:
+    - "[NEEDS CLARIFICATION] Criterion with forced clarification"
+    - "Clear, testable criterion"
+
+  non-functional:
+    - "Performance: Response time < 200ms"
+    - "Security: HTTPS required"
+
+# Completeness checklist (Gate 1: Simplicity)
+completeness:
+  - [ ] No [NEEDS CLARIFICATION] markers remaining
+  - [ ] All requirements testable
+  - [ ] Success criteria measurable
+
+# Design considerations (constraints, dependencies)
+design:
+  constraints:
+    - "Must work with existing auth system"
+
+  dependencies:
+    - "Requires SPEC-YYY to be complete"
+
+  risks:
+    - "Risk: Performance impact on large datasets"
+      mitigation: "Use pagination and caching"
+
+# Traceability
+trace:
+  code: []       # Populated by impl-agent
+  tests: []      # Populated by test-agent
+  docs: []       # Populated by doc-agents
+  decisions: []  # Related ADRs

@@ -1,0 +1,206 @@
+# Generic Stack Profile
+# Used as fallback for any project type
+
+meta:
+  name: generic
+  description: Generic profile for any project type
+  version: 1.0
+
+# Detection rules - matches anything
+detection:
+  priority: 0  # Lowest priority - fallback only
+  patterns:
+    always_match: true
+
+# Stack information
+stack:
+  languages: []
+  frameworks: []
+  tools: []
+
+# Behaviors and guidelines
+behaviors:
+
+  # Quality gates
+  quality_gates:
+    required:
+      - name: "Code review"
+        description: "At least 1 approval required"
+      - name: "Tests pass"
+        description: "All tests must pass before merge"
+      - name: "No failing builds"
+        description: "Build must succeed"
+
+    recommended:
+      - name: "Documentation updated"
+        description: "Update relevant docs with changes"
+      - name: "Changelog entry"
+        description: "Add entry to CHANGELOG if applicable"
+
+  # Code patterns
+  patterns:
+    file_organization:
+      - "Organize by feature or domain"
+      - "Keep related files together"
+      - "Use clear, descriptive names"
+
+    documentation:
+      - "Document public APIs"
+      - "Add comments for complex logic"
+      - "Keep README up-to-date"
+
+    testing:
+      - "Test critical paths"
+      - "Add tests for bug fixes"
+      - "Keep tests maintainable"
+
+  # Conventions
+  conventions:
+    commits:
+      format: "conventional"
+      examples:
+        - "feat: add user authentication"
+        - "fix: resolve memory leak in cache"
+        - "docs: update API documentation"
+
+    branches:
+      pattern: "feature/*, fix/*, docs/*"
+      main_branch: "main"
+
+    pull_requests:
+      title: "Clear, descriptive title"
+      description: "Include context, changes, testing"
+      size: "Keep PRs focused and reviewable"
+
+# Documentation requirements
+documentation:
+  required:
+    - path: "README.md"
+      sections:
+        - "Project description"
+        - "Installation"
+        - "Usage"
+        - "Contributing"
+
+    - path: "docs/"
+      description: "Project documentation"
+
+  auto_generated:
+    - "Feature pages (from specs)"
+    - "API documentation (from code)"
+
+# Testing guidance
+testing:
+  types:
+    - name: "Unit tests"
+      description: "Test individual components"
+      required: true
+
+    - name: "Integration tests"
+      description: "Test component interactions"
+      required: false
+      recommended: true
+
+  coverage:
+    minimum: 70
+    target: 90
+    critical_paths: 100
+
+# Workflow customizations
+workflows:
+  feature:
+    stages:
+      - discover
+      - specify
+      - implement
+      - verify
+
+    gates:
+      - stage: specify
+        checks:
+          - "Spec has clear acceptance criteria"
+          - "Dependencies identified"
+
+      - stage: implement
+        checks:
+          - "Code matches spec"
+          - "Tests added"
+
+      - stage: verify
+        checks:
+          - "All tests pass"
+          - "Documentation updated"
+
+  bugfix:
+    stages:
+      - investigate
+      - specify
+      - fix
+      - verify
+
+    gates:
+      - stage: investigate
+        checks:
+          - "Root cause identified"
+          - "Reproduction steps documented"
+
+      - stage: fix
+        checks:
+          - "Regression test added"
+          - "Fix verified"
+
+# Agent prompts (for lead agents)
+agent_prompts:
+  quality_reminder: |
+    Remember for this generic project:
+    - Keep code clean and maintainable
+    - Add tests for new functionality
+    - Update documentation
+    - Follow existing patterns
+
+  pre_implementation: |
+    Before implementing:
+    - Review existing code patterns
+    - Check for similar implementations
+    - Verify understanding of requirements
+
+  pre_merge: |
+    Before merging:
+    - All tests pass
+    - Documentation updated
+    - Code reviewed
+    - No temporary/debug code
+
+# Tool configurations (generic defaults)
+tools:
+  version_control:
+    system: git
+    ignore_patterns:
+      - "node_modules/"
+      - "__pycache__/"
+      - "*.pyc"
+      - ".env"
+      - "*.log"
+      - ".DS_Store"
+      - "dist/"
+      - "build/"
+
+  editor:
+    recommendations:
+      - "Use consistent formatting"
+      - "Enable linting if available"
+      - "Configure auto-save"
+
+# Notes
+notes: |
+  This is the generic fallback profile used when no specific stack is detected.
+
+  It provides baseline quality gates and conventions that work for any project type.
+
+  For better stack-specific guidance, configure a more specific profile:
+  - typescript-react
+  - python-fastapi
+  - go-standard
+  - rust-cargo
+
+  Stack profiles will be expanded in v0.2+

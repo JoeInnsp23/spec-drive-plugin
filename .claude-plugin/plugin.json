@@ -1,0 +1,8 @@
+{
+  "name": "spec-drive",
+  "version": "0.1.0",
+  "description": "Spec-driven development with workflows, quality gates, and auto-maintained documentation",
+  "author": {
+    "name": "Joe"
+  }
+}

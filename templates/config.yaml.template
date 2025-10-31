@@ -1,0 +1,20 @@
+project:
+  name: "{{PROJECT_NAME}}"
+  description: "{{PROJECT_DESCRIPTION}}"
+  type: "{{TYPE}}"
+  initialized: "{{DATE}}"
+
+stack:
+  profile: "{{STACK}}"
+  languages: []
+  frameworks: []
+  tools: []
+
+mode:
+  enforcement: "advisory"
+  autodocs: true
+  traceability: true
+
+workflows:
+  active: null
+  history: []
