@@ -27,9 +27,10 @@ spec-drive helps you start new projects or organize existing ones with a consist
 {
   "extraKnownMarketplaces": {
     "joe-personal": {
-      "type": "github",
-      "url": "https://github.com/JoeInnsp23/spec-drive-plugin",
-      "private": true
+      "source": {
+        "source": "github",
+        "repo": "JoeInnsp23/spec-drive-plugin"
+      }
     }
   },
   "enabledPlugins": {

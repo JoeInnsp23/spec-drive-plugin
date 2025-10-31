@@ -1,33 +1,35 @@
 {
-  "name": "spec-drive",
-  "displayName": "Spec-Drive Development System",
-  "version": "0.1.0",
-  "description": "Spec-driven development with workflows, quality gates, and auto-maintained documentation. Initializes projects with standard structure and templates for consistent development.",
-  "author": {
-    "name": "Joe",
-    "url": "https://github.com/JoeInnsp23"
+  "name": "joe-personal",
+  "owner": {
+    "name": "Joe"
   },
-  "homepage": "https://github.com/JoeInnsp23/spec-drive-plugin",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/JoeInnsp23/spec-drive-plugin.git"
+  "metadata": {
+    "description": "Joe's personal Claude Code plugins",
+    "version": "1.0.0"
   },
-  "keywords": [
-    "spec-driven",
-    "workflows",
-    "documentation",
-    "quality-gates",
-    "initialization",
-    "templates",
-    "project-setup"
-  ],
-  "license": "MIT",
-  "categories": [
-    "development-tools",
-    "documentation",
-    "code-quality"
-  ],
-  "minClaudeVersion": "0.1.0",
-  "screenshots": [],
-  "changelog": "https://github.com/JoeInnsp23/spec-drive-plugin/blob/main/CHANGELOG.md"
+  "plugins": [
+    {
+      "name": "spec-drive",
+      "source": ".",
+      "description": "Spec-driven development with workflows, quality gates, and auto-maintained documentation. Initializes projects with standard structure and templates for consistent development.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joe",
+        "url": "https://github.com/JoeInnsp23"
+      },
+      "homepage": "https://github.com/JoeInnsp23/spec-drive-plugin",
+      "repository": "https://github.com/JoeInnsp23/spec-drive-plugin",
+      "license": "MIT",
+      "keywords": [
+        "spec-driven",
+        "workflows",
+        "documentation",
+        "quality-gates",
+        "initialization",
+        "templates",
+        "project-setup"
+      ],
+      "category": "development-tools"
+    }
+  ]
 }
