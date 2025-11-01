@@ -71,12 +71,12 @@ echo -e "${GREEN}✓${NC} Loaded project data"
 echo -e "${BLUE}Creating docs/ structure...${NC}"
 
 # Create directories
+mkdir -p docs/00-overview
 mkdir -p docs/10-architecture
-mkdir -p docs/20-build-release
-mkdir -p docs/30-runtime
-mkdir -p docs/40-product
-mkdir -p docs/50-observability
-mkdir -p docs/60-adr
+mkdir -p docs/20-build
+mkdir -p docs/40-api
+mkdir -p docs/50-decisions
+mkdir -p docs/60-features
 
 echo -e "${GREEN}✓${NC} Created directory structure"
 
@@ -91,9 +91,11 @@ DATE=$(date -u +%Y-%m-%d)
 COMMON_VARS=(
   --var "PROJECT_NAME=$PROJECT_NAME"
   --var "PROJECT_VISION=$PROJECT_VISION"
+  --var "PROJECT_DESCRIPTION=$PROJECT_VISION"
   --var "KEY_FEATURES=$KEY_FEATURES"
   --var "TARGET_USERS=$TARGET_USERS"
   --var "TECH_STACK=$TECH_STACK"
+  --var "STACK=$TECH_STACK"
   --var "VERSION=0.1.0"
   --var "TIMESTAMP=$TIMESTAMP"
   --var "DATE=$DATE"
@@ -101,17 +103,16 @@ COMMON_VARS=(
 
 # Template mapping: template_file -> output_file
 declare -A DOCS=(
-  ["PRODUCT-BRIEF.md.template"]="docs/40-product/PRODUCT-BRIEF.md"
-  ["USER-JOURNEYS.md.template"]="docs/40-product/USER-JOURNEYS.md"
-  ["SYSTEM-OVERVIEW.md.template"]="docs/10-architecture/SYSTEM-OVERVIEW.md"
+  ["SYSTEM-OVERVIEW.md.template"]="docs/00-overview/SYSTEM-OVERVIEW.md"
+  ["GLOSSARY.md.template"]="docs/00-overview/GLOSSARY.md"
   ["ARCHITECTURE.md.template"]="docs/10-architecture/ARCHITECTURE.md"
   ["COMPONENT-CATALOG.md.template"]="docs/10-architecture/COMPONENT-CATALOG.md"
   ["DATA-FLOWS.md.template"]="docs/10-architecture/DATA-FLOWS.md"
-  ["BUILD-RELEASE.md.template"]="docs/20-build-release/BUILD-RELEASE.md"
-  ["CI-QUALITY-GATES.md.template"]="docs/20-build-release/CI-QUALITY-GATES.md"
-  ["RUNTIME-DEPLOYMENT.md.template"]="docs/30-runtime/RUNTIME-DEPLOYMENT.md"
-  ["OBSERVABILITY.md.template"]="docs/50-observability/OBSERVABILITY.md"
-  ["GLOSSARY.md.template"]="docs/GLOSSARY.md"
+  ["RUNTIME-DEPLOYMENT.md.template"]="docs/10-architecture/RUNTIME-DEPLOYMENT.md"
+  ["OBSERVABILITY.md.template"]="docs/10-architecture/OBSERVABILITY.md"
+  ["BUILD-RELEASE.md.template"]="docs/20-build/BUILD-RELEASE.md"
+  ["CI-QUALITY-GATES.md.template"]="docs/20-build/CI-QUALITY-GATES.md"
+  ["PRODUCT-BRIEF.md.template"]="docs/PRODUCT-BRIEF.md"
 )
 
 # Render each template
@@ -137,7 +138,7 @@ for template in "${!DOCS[@]}"; do
 done
 
 # Create ADR template placeholder
-cat > "docs/60-adr/ADR-TEMPLATE.md" << 'EOF'
+cat > "docs/50-decisions/ADR-TEMPLATE.md" << 'EOF'
 # ADR-XXX: [Title]
 
 **Status:** [Proposed | Accepted | Deprecated | Superseded]
@@ -172,7 +173,7 @@ cat > "docs/60-adr/ADR-TEMPLATE.md" << 'EOF'
 EOF
 
 doc_count=$((doc_count + 1))
-echo -e "  ${GREEN}✓${NC} Created: docs/60-adr/ADR-TEMPLATE.md"
+echo -e "  ${GREEN}✓${NC} Created: docs/50-decisions/ADR-TEMPLATE.md"
 
 echo -e "${GREEN}✓${NC} Generated $doc_count documents"
 
