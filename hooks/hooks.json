@@ -10,6 +10,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks-handlers/posttool.sh",
+            "matcher": "Write|Edit|Delete",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
