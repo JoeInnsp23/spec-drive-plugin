@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "spec-drive",
-      "source": ".",
+      "source": "./",
       "description": "Spec-driven development with workflows, quality gates, and auto-maintained documentation. Initializes projects with standard structure and templates for consistent development.",
       "version": "0.1.0",
       "author": {
