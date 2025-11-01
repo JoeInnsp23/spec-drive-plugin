@@ -1,7 +1,6 @@
 ---
-name: init
 description: Initialize spec-drive in project (new or existing)
-allowed-tools: [Bash, Read, Write, Grep, Edit]
+allowed-tools: Bash(bash:*), Read, Write, Grep, Edit
 ---
 
 # Initialize spec-drive
@@ -14,7 +13,7 @@ Detects project type and runs appropriate initialization:
 
 ## Running Initialization
 
-!bash ${CLAUDE_PLUGIN_ROOT}/scripts/init.sh
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/init.sh`
 
 ## Next Steps
 
