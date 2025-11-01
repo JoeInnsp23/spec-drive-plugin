@@ -241,7 +241,7 @@ echo "" >> "$TEMP_FILE"
 echo "specs:" >> "$TEMP_FILE"
 if [[ $SPEC_COUNT -gt 0 ]]; then
   find "$SPECS_DIR" -type f -name "*.yaml" 2>/dev/null | sort | while IFS= read -r spec_file; do
-    spec_id=$(yq eval '.spec_id' "$spec_file" 2>/dev/null || echo "")
+    spec_id=$(yq eval '.id' "$spec_file" 2>/dev/null || echo "")
     spec_title=$(yq eval '.title' "$spec_file" 2>/dev/null || echo "")
     spec_status=$(yq eval '.status' "$spec_file" 2>/dev/null || echo "draft")
 

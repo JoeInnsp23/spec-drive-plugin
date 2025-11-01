@@ -135,7 +135,7 @@ export function doSomething() {}
 EOF
 
 cat > "$TEST_DIR3/.spec-drive/specs/FEAT-001.yaml" << 'EOF'
-spec_id: FEAT-001
+id: FEAT-001
 title: "Test Feature"
 type: feature
 status: draft
