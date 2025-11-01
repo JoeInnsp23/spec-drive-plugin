@@ -1,8 +1,18 @@
 # v0.1 Key Decisions Summary
 
-**Last Updated:** 2025-11-01
+**Last Updated:** 2025-11-01 (Documentation Phase Complete)
+**Status:** Frozen for v0.1 implementation
 
 Quick reference for major architectural decisions. See adr/ folder for detailed rationale.
+
+**All 7 ADRs Complete:**
+- ADR-001: YAML format for specs ✅
+- ADR-002: SessionStart hook auto-injection ✅
+- ADR-003: Stage-boundary autodocs updates ✅
+- ADR-004: Four quality gates design ✅
+- ADR-005: Aggressive existing project init ✅
+- ADR-006: JSDoc-style @spec tags ✅
+- ADR-007: Single state file (vs per-feature) ✅
 
 ---
 
@@ -25,7 +35,7 @@ Quick reference for major architectural decisions. See adr/ folder for detailed 
 ### 3. YAML for Specs (vs JSON)
 **Decision:** Use YAML format for spec files
 **Rationale:** Human-readable, supports comments, widely adopted
-**ADR:** ADR-001 (to be written)
+**ADR:** [ADR-001](./adr/ADR-001-yaml-format-for-specs.md) ✅
 **Alternatives Rejected:** JSON (no comments), TOML (less common)
 
 ### 4. .spec-drive/ Hidden Structure
@@ -48,7 +58,14 @@ Quick reference for major architectural decisions. See adr/ folder for detailed 
 **Rationale:** Separates planning docs from product docs, version-controlled properly
 **Structure:** current/planned/completed/archive for clear workflow
 
-### 8. Git Tracking Strategy
+### 8. Single State File (vs Per-Feature)
+**Decision:** Use single `state.yaml` file with workflow history
+**Rationale:** Simpler implementation, atomic updates, clear current context
+**ADR:** [ADR-007](./adr/ADR-007-single-state-file-vs-per-feature.md) ✅
+**Alternatives Rejected:** Per-feature files (complex), SQLite (overkill), tracked state (merge conflicts)
+**Trade-off:** Serial workflows (one at a time) in v0.1, parallelism deferred to v0.2
+
+### 9. Git Tracking Strategy
 **Tracked:** config.yaml, index.yaml, schemas/, specs/, development/
 **Gitignored:** state.yaml (runtime only)
 **Rationale:** State is ephemeral, everything else is source of truth
@@ -57,48 +74,48 @@ Quick reference for major architectural decisions. See adr/ folder for detailed 
 
 ## Behavior & Workflow Decisions
 
-### 9. SessionStart Hook Auto-Injection
+### 10. SessionStart Hook Auto-Injection
 **Decision:** Behavior agent (strict-concise) auto-injects via SessionStart hook
 **Rationale:** Always-on enforcement, no user opt-in required
-**ADR:** ADR-002 (to be written)
+**ADR:** [ADR-002](./adr/ADR-002-sessionstart-hook-auto-injection.md) ✅
 **Alternatives Rejected:** Manual activation (users forget), opt-in (adoption problem)
 
-### 10. Stage-Boundary Autodocs Updates
+### 11. Stage-Boundary Autodocs Updates
 **Decision:** Docs auto-update at workflow stage completions, not continuously
 **Rationale:** Reduces churn, meaningful checkpoints, stable doc state
-**ADR:** ADR-003 (to be written)
+**ADR:** [ADR-003](./adr/ADR-003-stage-boundary-autodocs-updates.md) ✅
 **Alternatives Rejected:** Continuous (too noisy), manual-only (defeats purpose)
 
-### 11. JSDoc-Style @spec Tags
+### 12. JSDoc-Style @spec Tags
 **Decision:** Use language-specific JSDoc-style traceability tags
 **Format:** `/** @spec TAG-ID */` (TypeScript), `"""@spec TAG-ID"""` (Python)
 **Rationale:** Lint-compatible, already understood by tooling, language-agnostic pattern
-**ADR:** ADR-006 (to be written)
+**ADR:** [ADR-006](./adr/ADR-006-jsdoc-style-spec-tags.md) ✅
 **Alternatives Rejected:** Decorators (not universal), custom syntax (linting issues)
 
-### 12. Four Quality Gates
+### 13. Four Quality Gates
 **Decision:** Fixed 4-stage workflow with gates between each
 **Stages:** Discover → Specify → Implement → Verify
 **Enforcement:** Script-based gate checks, blocking advancement
-**ADR:** ADR-004 (to be written)
+**ADR:** [ADR-004](./adr/ADR-004-four-quality-gates-design.md) ✅
 
 ---
 
 ## Scope Decisions (v0.1)
 
-### 13. Two Workflows Only
+### 14. Two Workflows Only
 **Decision:** v0.1 ships with app-new + feature workflows only
 **Deferred:** bugfix, research workflows (v0.2)
 **Rationale:** Prove core system works before expanding
 **Reference:** PRD Section 4
 
-### 14. No Specialist Agents v0.1
+### 15. No Specialist Agents v0.1
 **Decision:** Workflow DISCIPLINE not automation in v0.1
 **Deferred:** spec-agent, impl-agent, test-agent (v0.2)
 **Rationale:** Foundation first, automation second
 **Reference:** PRD Section 4
 
-### 15. Generic Stack Profile Only
+### 16. Generic Stack Profile Only
 **Decision:** v0.1 supports generic profile only
 **Deferred:** TypeScript/React, Python/FastAPI profiles (v0.2)
 **Rationale:** Prove architecture before customization
@@ -108,12 +125,12 @@ Quick reference for major architectural decisions. See adr/ folder for detailed 
 
 ## Initialization Decisions
 
-### 16. Aggressive Existing Project Init
+### 17. Aggressive Existing Project Init
 **Decision:** Archive ALL old docs, regenerate from code
 **Process:** Move `docs/` → `docs-archive-{timestamp}/`, full regeneration
 **Rationale:** Same rich baseline for new AND existing projects
 **Risk Mitigation:** Docs archived not deleted, user can recover
-**ADR:** ADR-005 (to be written)
+**ADR:** [ADR-005](./adr/ADR-005-aggressive-existing-project-init.md) ✅
 
 ---
 
