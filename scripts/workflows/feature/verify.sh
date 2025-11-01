@@ -137,6 +137,31 @@ yq eval "(.specs[] | select(.spec_id == \"$SPEC_ID\") | .status) = \"implemented
 echo -e "${GREEN}✓${NC} Spec updated to implemented"
 
 # ==============================================================================
+# Run Quality Gate 4 (Verify)
+# ==============================================================================
+
+echo ""
+echo -e "${BLUE}Running Quality Gate 4 (Verify)...${NC}"
+echo ""
+
+GATE_SCRIPT="$SCRIPT_DIR/../../gates/gate-4-verify.sh"
+
+if [[ -x "$GATE_SCRIPT" ]]; then
+  if "$GATE_SCRIPT"; then
+    echo ""
+    echo -e "${GREEN}✓ Quality Gate 4 PASSED${NC}"
+  else
+    echo ""
+    echo -e "${RED}✗ Quality Gate 4 FAILED${NC}"
+    echo "Fix the issues above before completing"
+    exit 1
+  fi
+else
+  # Fallback if gate script not found
+  echo -e "${YELLOW}⚠${NC}  Gate script not found, proceeding without gate check"
+fi
+
+# ==============================================================================
 # Complete Workflow
 # ==============================================================================
 

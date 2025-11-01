@@ -267,9 +267,13 @@ test_complete_workflow() {
   " >/dev/null 2>&1 || true
 
   # Create mock implementation with @spec tag
-  mkdir -p src
+  mkdir -p src tests
   echo "// @spec $spec_id" > src/test.js
   echo "function test() { return true; }" >> src/test.js
+
+  # Create test file with @spec tag (required by Gate 3)
+  echo "// @spec $spec_id" > tests/test.test.js
+  echo "test('should work', () => { expect(true).toBe(true); });" >> tests/test.test.js
 
   echo "Y" | "$implement_script" >/dev/null 2>&1 || true
 

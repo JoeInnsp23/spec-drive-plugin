@@ -130,10 +130,33 @@ echo -e "${GREEN}✓${NC} $CRITERIA_COUNT acceptance criteria defined"
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 yq eval ".updated = \"$TIMESTAMP\"" "$SPEC_FILE" -i
 
-# Set can_advance to true
-acquire_lock
-yq eval ".can_advance = true" "$STATE_FILE" -i
-release_lock
+# ==============================================================================
+# Run Quality Gate 2 (Specify)
+# ==============================================================================
+
+echo ""
+echo -e "${BLUE}Running Quality Gate 2 (Specify)...${NC}"
+echo ""
+
+GATE_SCRIPT="$SCRIPT_DIR/../../gates/gate-2-specify.sh"
+
+if [[ -x "$GATE_SCRIPT" ]]; then
+  if "$GATE_SCRIPT"; then
+    echo ""
+    echo -e "${GREEN}✓ Quality Gate 2 PASSED${NC}"
+  else
+    echo ""
+    echo -e "${RED}✗ Quality Gate 2 FAILED${NC}"
+    echo "Fix the issues above before advancing"
+    exit 1
+  fi
+else
+  # Fallback if gate script not found
+  echo -e "${YELLOW}⚠${NC}  Gate script not found, setting can_advance manually"
+  acquire_lock
+  yq eval ".can_advance = true" "$STATE_FILE" -i
+  release_lock
+fi
 
 # ==============================================================================
 # Summary

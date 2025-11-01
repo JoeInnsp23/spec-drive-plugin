@@ -182,12 +182,35 @@ echo -e "${BLUE}Initializing workflow...${NC}"
 # Start workflow
 workflow_start "feature" "$SPEC_ID" >/dev/null 2>&1
 
-# Set can_advance to true (discover stage is complete once spec is created)
-acquire_lock
-yq eval ".can_advance = true" "$STATE_FILE" -i
-release_lock
-
 echo -e "${GREEN}✓${NC} Workflow initialized"
+
+# ==============================================================================
+# Run Quality Gate 1 (Discover)
+# ==============================================================================
+
+echo ""
+echo -e "${BLUE}Running Quality Gate 1 (Discover)...${NC}"
+echo ""
+
+GATE_SCRIPT="$SCRIPT_DIR/../../gates/gate-1-discover.sh"
+
+if [[ -x "$GATE_SCRIPT" ]]; then
+  if "$GATE_SCRIPT"; then
+    echo ""
+    echo -e "${GREEN}✓ Quality Gate 1 PASSED${NC}"
+  else
+    echo ""
+    echo -e "${RED}✗ Quality Gate 1 FAILED${NC}"
+    echo "Fix the issues above before advancing"
+    exit 1
+  fi
+else
+  # Fallback if gate script not found
+  echo -e "${YELLOW}⚠${NC}  Gate script not found, setting can_advance manually"
+  acquire_lock
+  yq eval ".can_advance = true" "$STATE_FILE" -i
+  release_lock
+fi
 
 # ==============================================================================
 # Summary
