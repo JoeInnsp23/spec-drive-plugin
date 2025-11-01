@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://spec-drive.dev/schemas/v0.1/spec-schema.json",
+  "title": "Spec-Drive Specification Schema",
+  "description": "JSON Schema for spec-drive specification files (.spec-drive/specs/*.yaml)",
+  "type": "object",
+  "required": ["id", "title", "status", "created", "updated", "summary", "acceptance_criteria"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique specification identifier (e.g., AUTH-001, PROFILE-002)",
+      "pattern": "^[A-Z][A-Z0-9]+-[0-9]{3}$",
+      "examples": ["AUTH-001", "PROFILE-002", "PAYMENT-010"]
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title for the specification",
+      "minLength": 3,
+      "maxLength": 100,
+      "examples": ["User authentication", "Profile management", "Payment processing"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the specification in the workflow",
+      "enum": ["draft", "specified", "implemented", "verified", "done"],
+      "default": "draft"
+    },
+    "created": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when spec was created",
+      "format": "date-time",
+      "examples": ["2025-11-01T10:30:00Z"]
+    },
+    "updated": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when spec was last updated",
+      "format": "date-time",
+      "examples": ["2025-11-01T14:45:00Z"]
+    },
+    "summary": {
+      "type": "string",
+      "description": "Brief description of what this spec covers (supports multiline)",
+      "minLength": 10,
+      "examples": ["Implement user authentication with email/password.\nSupport session management and JWT tokens."]
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "description": "List of acceptance criteria that must be met",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["criterion", "testable"],
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "description": "Specific, testable acceptance criterion",
+            "minLength": 10,
+            "examples": ["User can log in with valid email/password"]
+          },
+          "testable": {
+            "type": "boolean",
+            "description": "Whether this criterion can be tested programmatically",
+            "default": true
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes about this criterion"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "success_criteria": {
+      "type": "array",
+      "description": "Measurable success metrics (optional but recommended)",
+      "items": {
+        "type": "string",
+        "minLength": 5,
+        "examples": ["Login success rate >99.9%", "Authentication latency <200ms p95"]
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "List of other spec IDs this spec depends on",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9]+-[0-9]{3}$",
+        "examples": ["DATABASE-001", "CRYPTO-001"]
+      },
+      "default": []
+    },
+    "risks": {
+      "type": "array",
+      "description": "Identified risks and concerns for this spec",
+      "items": {
+        "type": "string",
+        "minLength": 5,
+        "examples": ["Brute force attacks if no rate limiting"]
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes, design decisions, or context (supports multiline)"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Optional tags for categorization",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$",
+        "examples": ["security", "performance", "ui"]
+      }
+    },
+    "assignee": {
+      "type": "string",
+      "description": "Person or team assigned to implement this spec"
+    },
+    "estimate": {
+      "type": "object",
+      "description": "Optional time/effort estimate",
+      "properties": {
+        "story_points": {
+          "type": "number",
+          "minimum": 0,
+          "examples": [3, 5, 8]
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0,
+          "examples": [8, 16, 40]
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "id": "AUTH-001",
+      "title": "User authentication",
+      "status": "draft",
+      "created": "2025-11-01T10:30:00Z",
+      "updated": "2025-11-01T10:30:00Z",
+      "summary": "Implement user authentication with email/password.\nSupport session management and JWT tokens.",
+      "acceptance_criteria": [
+        {
+          "criterion": "User can log in with valid email/password",
+          "testable": true
+        },
+        {
+          "criterion": "User receives JWT token on successful login",
+          "testable": true
+        },
+        {
+          "criterion": "User session persists across page reloads",
+          "testable": true
+        }
+      ],
+      "success_criteria": [
+        "Login success rate >99.9%",
+        "Authentication latency <200ms p95"
+      ],
+      "dependencies": ["DATABASE-001", "CRYPTO-001"],
+      "risks": [
+        "Brute force attacks if no rate limiting",
+        "Token expiration handling unclear"
+      ],
+      "notes": "Using bcrypt for password hashing (10 rounds).\nJWT expires after 7 days, refresh token after 30 days.",
+      "tags": ["security", "authentication"],
+      "assignee": "joe@example.com",
+      "estimate": {
+        "story_points": 5,
+        "hours": 16
+      }
+    }
+  ]
+}

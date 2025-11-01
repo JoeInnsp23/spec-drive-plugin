@@ -1,0 +1,262 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://spec-drive.dev/schemas/v0.1/index-schema.json",
+  "title": "Spec-Drive Index Schema",
+  "description": "JSON Schema for spec-drive index file (.spec-drive/index.yaml)",
+  "type": "object",
+  "required": ["meta", "components", "specs", "docs", "code"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the index",
+      "required": ["generated", "version", "project_name"],
+      "properties": {
+        "generated": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when index was generated",
+          "format": "date-time",
+          "examples": ["2025-11-01T10:30:00Z"]
+        },
+        "version": {
+          "type": "string",
+          "description": "Spec-drive version that generated this index",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "examples": ["0.1.0", "1.2.3"]
+        },
+        "project_name": {
+          "type": "string",
+          "description": "Name of the project",
+          "minLength": 1,
+          "examples": ["my-app", "auth-service"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "array",
+      "description": "List of detected components in the codebase",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "path", "summary"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique component identifier (kebab-case)",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "examples": ["auth-service", "user-repository", "jwt-utils"]
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of component",
+            "enum": ["component", "service", "utility", "function", "class", "module"],
+            "examples": ["service", "utility"]
+          },
+          "path": {
+            "type": "string",
+            "description": "File path and line number where component is defined",
+            "pattern": "^[^:]+:\\d+$",
+            "examples": ["src/auth/AuthService.ts:15", "src/utils/jwt.ts:8"]
+          },
+          "summary": {
+            "type": "string",
+            "description": "Brief description of what this component does",
+            "minLength": 5,
+            "examples": ["Handles user authentication and session management"]
+          },
+          "dependencies": {
+            "type": "array",
+            "description": "List of other component IDs this component depends on",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "default": []
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "specs": {
+      "type": "array",
+      "description": "List of specifications with traceability information",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Specification identifier",
+            "pattern": "^[A-Z][A-Z0-9]+-[0-9]{3}$",
+            "examples": ["AUTH-001", "PROFILE-002"]
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title",
+            "minLength": 3,
+            "examples": ["User authentication"]
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status",
+            "enum": ["draft", "specified", "implemented", "verified", "done"]
+          },
+          "trace": {
+            "type": "object",
+            "description": "Traceability links to code, tests, and docs",
+            "properties": {
+              "code": {
+                "type": "array",
+                "description": "List of code file:line references with @spec tags",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[^:]+:\\d+$",
+                  "examples": ["src/auth/login.ts:42", "src/auth/session.ts:18"]
+                }
+              },
+              "tests": {
+                "type": "array",
+                "description": "List of test file:line references with @spec tags",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[^:]+:\\d+$",
+                  "examples": ["tests/auth/login.test.ts:12"]
+                }
+              },
+              "docs": {
+                "type": "array",
+                "description": "List of documentation files related to this spec",
+                "items": {
+                  "type": "string",
+                  "examples": ["docs/60-features/AUTH-001.md"]
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "docs": {
+      "type": "array",
+      "description": "List of documentation files with metadata",
+      "items": {
+        "type": "object",
+        "required": ["path", "type", "summary"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative path to documentation file",
+            "pattern": "^docs/.*\\.md$",
+            "examples": ["docs/10-architecture/ARCHITECTURE.md"]
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of documentation",
+            "enum": ["overview", "architecture", "api", "feature", "decision", "guide", "build"],
+            "examples": ["architecture", "feature"]
+          },
+          "summary": {
+            "type": "string",
+            "description": "Brief description of the document's content",
+            "minLength": 5,
+            "examples": ["System architecture and design philosophy"]
+          },
+          "last_updated": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when doc was last updated",
+            "format": "date-time",
+            "examples": ["2025-11-01T09:15:00Z"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "code": {
+      "type": "array",
+      "description": "List of code files with metadata",
+      "items": {
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative path to code file",
+            "examples": ["src/auth/login.ts", "src/utils/crypto.ts"]
+          },
+          "components": {
+            "type": "array",
+            "description": "List of component IDs defined in this file",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "default": []
+          },
+          "specs": {
+            "type": "array",
+            "description": "List of spec IDs referenced in this file (via @spec tags)",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9]+-[0-9]{3}$"
+            },
+            "default": []
+          },
+          "summary": {
+            "type": "string",
+            "description": "Brief description of what this file contains",
+            "examples": ["User authentication logic"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "meta": {
+        "generated": "2025-11-01T10:30:00Z",
+        "version": "0.1.0",
+        "project_name": "my-app"
+      },
+      "components": [
+        {
+          "id": "auth-service",
+          "type": "service",
+          "path": "src/auth/AuthService.ts:15",
+          "summary": "Handles user authentication and session management",
+          "dependencies": ["database-client", "jwt-utils"]
+        }
+      ],
+      "specs": [
+        {
+          "id": "AUTH-001",
+          "title": "User authentication",
+          "status": "implemented",
+          "trace": {
+            "code": ["src/auth/login.ts:42", "src/auth/session.ts:18"],
+            "tests": ["tests/auth/login.test.ts:12"],
+            "docs": ["docs/60-features/AUTH-001.md"]
+          }
+        }
+      ],
+      "docs": [
+        {
+          "path": "docs/10-architecture/ARCHITECTURE.md",
+          "type": "architecture",
+          "summary": "System architecture and design philosophy",
+          "last_updated": "2025-11-01T09:15:00Z"
+        }
+      ],
+      "code": [
+        {
+          "path": "src/auth/login.ts",
+          "components": ["auth-service"],
+          "specs": ["AUTH-001"],
+          "summary": "User login implementation"
+        }
+      ]
+    }
+  ]
+}

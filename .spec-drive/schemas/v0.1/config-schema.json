@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://spec-drive.dev/schemas/v0.1/config-schema.json",
+  "title": "Spec-Drive Configuration Schema",
+  "description": "JSON Schema for spec-drive configuration file (.spec-drive/config.yaml)",
+  "type": "object",
+  "required": ["project", "behavior", "autodocs", "workflows", "tools"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "description": "Project-level configuration",
+      "required": ["name", "version", "stack_profile"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name",
+          "minLength": 1,
+          "examples": ["my-app", "auth-service"]
+        },
+        "version": {
+          "type": "string",
+          "description": "Project version (semver)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "examples": ["0.1.0", "1.2.3"]
+        },
+        "stack_profile": {
+          "type": "string",
+          "description": "Technology stack profile (v0.1 only supports generic)",
+          "enum": ["generic", "typescript-react", "python-fastapi", "go-gin", "rust-actix"],
+          "default": "generic"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional project description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "behavior": {
+      "type": "object",
+      "description": "Behavior optimization settings",
+      "required": ["mode", "gates_enabled", "auto_commit"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "Behavior enforcement mode",
+          "enum": ["strict-concise", "advisory", "off"],
+          "default": "strict-concise"
+        },
+        "gates_enabled": {
+          "type": "boolean",
+          "description": "Whether quality gates are enforced",
+          "default": true
+        },
+        "auto_commit": {
+          "type": "boolean",
+          "description": "Whether to automatically commit changes (v0.1: always false)",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "autodocs": {
+      "type": "object",
+      "description": "Documentation auto-generation settings",
+      "required": ["enabled", "update_frequency", "preserve_manual_sections"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether autodocs is enabled",
+          "default": true
+        },
+        "update_frequency": {
+          "type": "string",
+          "description": "When to update documentation",
+          "enum": ["stage-boundary", "manual", "per-tool", "continuous"],
+          "default": "stage-boundary"
+        },
+        "preserve_manual_sections": {
+          "type": "boolean",
+          "description": "Whether to preserve manual content in AUTO sections",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflows": {
+      "type": "object",
+      "description": "Workflow configuration",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "description": "List of enabled workflows",
+          "items": {
+            "type": "string",
+            "enum": ["app-new", "feature", "bugfix", "research"]
+          },
+          "default": ["app-new", "feature"],
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "tools": {
+      "type": "object",
+      "description": "External tool configuration",
+      "required": ["test_command", "lint_command"],
+      "properties": {
+        "test_command": {
+          "type": "string",
+          "description": "Command to run tests",
+          "examples": ["npm test", "pytest", "go test ./..."],
+          "default": "npm test"
+        },
+        "lint_command": {
+          "type": "string",
+          "description": "Command to run linting",
+          "examples": ["npm run lint", "flake8", "golangci-lint run"],
+          "default": "npm run lint"
+        },
+        "typecheck_command": {
+          "type": "string",
+          "description": "Command to run type checking (optional)",
+          "examples": ["npx tsc --noEmit", "mypy .", ""]
+        },
+        "build_command": {
+          "type": "string",
+          "description": "Command to build the project (optional)",
+          "examples": ["npm run build", "make", "cargo build"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "gates": {
+      "type": "object",
+      "description": "Quality gate configuration (optional, v0.2+)",
+      "properties": {
+        "gate-1": {
+          "$ref": "#/definitions/gate_config"
+        },
+        "gate-2": {
+          "$ref": "#/definitions/gate_config"
+        },
+        "gate-3": {
+          "$ref": "#/definitions/gate_config"
+        },
+        "gate-4": {
+          "$ref": "#/definitions/gate_config"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "gate_config": {
+      "type": "object",
+      "description": "Configuration for a specific quality gate",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this gate is enabled",
+          "default": true
+        },
+        "checks": {
+          "type": "object",
+          "description": "Individual check toggles",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "project": {
+        "name": "my-app",
+        "version": "0.1.0",
+        "stack_profile": "generic",
+        "description": "Example application"
+      },
+      "behavior": {
+        "mode": "strict-concise",
+        "gates_enabled": true,
+        "auto_commit": false
+      },
+      "autodocs": {
+        "enabled": true,
+        "update_frequency": "stage-boundary",
+        "preserve_manual_sections": true
+      },
+      "workflows": {
+        "enabled": ["app-new", "feature"]
+      },
+      "tools": {
+        "test_command": "npm test",
+        "lint_command": "npm run lint",
+        "typecheck_command": "npx tsc --noEmit",
+        "build_command": "npm run build"
+      }
+    }
+  ]
+}

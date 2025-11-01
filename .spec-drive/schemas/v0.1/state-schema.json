@@ -1,0 +1,254 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://spec-drive.dev/schemas/v0.1/state-schema.json",
+  "title": "Spec-Drive State Schema",
+  "description": "JSON Schema for spec-drive runtime state file (.spec-drive/state.yaml)",
+  "type": "object",
+  "required": ["current_workflow", "current_spec", "current_stage", "can_advance", "dirty", "workflows", "meta"],
+  "properties": {
+    "current_workflow": {
+      "description": "Currently active workflow (null if no workflow active)",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["app-new", "feature", "bugfix", "research"]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current_spec": {
+      "description": "Currently active specification ID (null if no workflow active)",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]+-[0-9]{3}$",
+          "examples": ["AUTH-001", "APP-001"]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current_stage": {
+      "description": "Current stage in active workflow (null if no workflow active)",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["discover", "specify", "implement", "verify"]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "can_advance": {
+      "type": "boolean",
+      "description": "Whether the current stage gate allows advancement to next stage",
+      "default": false
+    },
+    "dirty": {
+      "type": "boolean",
+      "description": "Whether autodocs needs to run (set by PostToolUse hook, cleared by autodocs)",
+      "default": false
+    },
+    "workflows": {
+      "type": "object",
+      "description": "History of all workflows (completed and in-progress)",
+      "additionalProperties": {
+        "$ref": "#/definitions/workflow_entry"
+      },
+      "default": {}
+    },
+    "meta": {
+      "type": "object",
+      "description": "Metadata about state file lifecycle",
+      "required": ["initialized"],
+      "properties": {
+        "initialized": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when state.yaml was created",
+          "format": "date-time",
+          "examples": ["2025-11-01T09:00:00Z"]
+        },
+        "last_gate_run": {
+          "description": "ISO 8601 timestamp when a gate was last executed (null if never run)",
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_autodocs_run": {
+          "description": "ISO 8601 timestamp when autodocs last ran (null if never run)",
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "workflow_entry": {
+      "type": "object",
+      "description": "Workflow history entry for a specific spec",
+      "required": ["workflow", "status"],
+      "properties": {
+        "workflow": {
+          "type": "string",
+          "description": "Type of workflow",
+          "enum": ["app-new", "feature", "bugfix", "research"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Workflow completion status",
+          "enum": ["in_progress", "done", "abandoned"]
+        },
+        "stage": {
+          "type": "string",
+          "description": "Current or final stage (for in_progress workflows)",
+          "enum": ["discover", "specify", "implement", "verify"]
+        },
+        "started": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when workflow started",
+          "format": "date-time",
+          "examples": ["2025-11-01T14:00:00Z"]
+        },
+        "completed": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when workflow completed",
+          "format": "date-time",
+          "examples": ["2025-11-01T16:30:00Z"]
+        },
+        "abandoned": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when workflow was abandoned",
+          "format": "date-time"
+        },
+        "gates": {
+          "type": "object",
+          "description": "Gate execution history for this workflow",
+          "properties": {
+            "gate-1": {
+              "$ref": "#/definitions/gate_result"
+            },
+            "gate-2": {
+              "$ref": "#/definitions/gate_result"
+            },
+            "gate-3": {
+              "$ref": "#/definitions/gate_result"
+            },
+            "gate-4": {
+              "$ref": "#/definitions/gate_result"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "gate_result": {
+      "type": "object",
+      "description": "Result of a quality gate execution",
+      "required": ["passed", "timestamp"],
+      "properties": {
+        "passed": {
+          "type": "boolean",
+          "description": "Whether the gate passed"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when gate was executed",
+          "format": "date-time",
+          "examples": ["2025-11-01T14:05:00Z"]
+        },
+        "failures": {
+          "type": "array",
+          "description": "List of failure reasons if gate did not pass",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "current_workflow": "feature",
+      "current_spec": "AUTH-001",
+      "current_stage": "implement",
+      "can_advance": false,
+      "dirty": true,
+      "workflows": {
+        "APP-001": {
+          "workflow": "app-new",
+          "status": "done",
+          "completed": "2025-11-01T10:00:00Z",
+          "gates": {
+            "gate-1": {
+              "passed": true,
+              "timestamp": "2025-11-01T09:30:00Z"
+            }
+          }
+        },
+        "AUTH-001": {
+          "workflow": "feature",
+          "status": "in_progress",
+          "stage": "implement",
+          "started": "2025-11-01T14:00:00Z",
+          "gates": {
+            "gate-1": {
+              "passed": true,
+              "timestamp": "2025-11-01T14:05:00Z"
+            },
+            "gate-2": {
+              "passed": true,
+              "timestamp": "2025-11-01T14:10:00Z"
+            },
+            "gate-3": {
+              "passed": false,
+              "timestamp": "2025-11-01T14:30:00Z",
+              "failures": [
+                "Missing @spec tags in src/auth/login.ts",
+                "Test coverage below 90% for AuthService"
+              ]
+            }
+          }
+        }
+      },
+      "meta": {
+        "initialized": "2025-11-01T09:00:00Z",
+        "last_gate_run": "2025-11-01T14:30:00Z",
+        "last_autodocs_run": "2025-11-01T14:15:00Z"
+      }
+    },
+    {
+      "current_workflow": null,
+      "current_spec": null,
+      "current_stage": null,
+      "can_advance": false,
+      "dirty": false,
+      "workflows": {},
+      "meta": {
+        "initialized": "2025-11-01T09:00:00Z",
+        "last_gate_run": null,
+        "last_autodocs_run": null
+      }
+    }
+  ]
+}
