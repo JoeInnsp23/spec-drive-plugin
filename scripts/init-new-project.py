@@ -66,15 +66,13 @@ def scaffold_folders():
     """Create folder structure"""
 
     folders = [
-        '.spec-drive',
-        'specs',
+        '.spec-drive/specs',
         'docs/00-overview',
         'docs/10-architecture',
         'docs/20-build',
         'docs/40-api',
         'docs/50-decisions',
         'docs/60-features',
-        'tests',
     ]
 
     for folder in folders:
@@ -96,7 +94,7 @@ def populate_templates(project_info, stack):
         ('docs/CI-QUALITY-GATES.md.template', 'docs/20-build/CI-&-QUALITY-GATES.md'),
         ('docs/PRODUCT-BRIEF.md.template', 'docs/PRODUCT-BRIEF.md'),
         ('docs/ADR-TEMPLATE.md.template', 'docs/50-decisions/ADR-TEMPLATE.md'),
-        ('SPEC-TEMPLATE.yaml', 'specs/SPEC-TEMPLATE.yaml'),
+        ('SPEC-TEMPLATE.yaml', '.spec-drive/specs/SPEC-TEMPLATE.yaml'),
     ]
 
     for template_name, output_path in template_files:

@@ -1,6 +1,7 @@
 ---
+name: init
 description: Initialize spec-drive in project (new or existing)
-allowed-tools: Bash(bash:*), Read, Write, Grep, Edit
+allowed-tools: "*"
 ---
 
 # Initialize spec-drive

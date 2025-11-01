@@ -1,8 +1,7 @@
 ---
 name: app-new
 description: Initialize new project with planning session and documentation
-arguments:
-  - project-name
+allowed-tools: "*"
 argument_hint: "[project-name]"
 ---
 

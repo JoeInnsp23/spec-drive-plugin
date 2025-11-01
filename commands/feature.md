@@ -1,9 +1,7 @@
 ---
 name: feature
 description: Start or advance feature development workflow (4-stage process)
-arguments:
-  - action
-  - spec-id
+allowed-tools: "*"
 argument_hint: "[start|advance|status] [SPEC-ID]"
 ---
 
