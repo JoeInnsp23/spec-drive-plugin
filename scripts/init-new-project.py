@@ -15,6 +15,25 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
+import subprocess
+
+# Auto-install PyYAML if not available
+try:
+    import yaml
+except ImportError:
+    print("📦 Installing required dependency: PyYAML...")
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "--quiet", "pyyaml"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        import yaml
+        print("✓ PyYAML installed successfully")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to install PyYAML: {e}", file=sys.stderr)
+        print("Please install manually: pip install pyyaml", file=sys.stderr)
+        sys.exit(1)
 
 PLUGIN_ROOT = os.environ.get('CLAUDE_PLUGIN_ROOT')
 if not PLUGIN_ROOT:
@@ -22,54 +41,6 @@ if not PLUGIN_ROOT:
     sys.exit(1)
 
 TEMPLATES_DIR = Path(PLUGIN_ROOT) / 'templates'
-
-def dict_to_yaml(data, indent=0):
-    """
-    Convert Python dict to YAML string (simple implementation for our needs).
-    Handles nested dicts, lists, strings, bools, None, and datetimes.
-    """
-    lines = []
-    indent_str = '  ' * indent
-
-    for key, value in data.items():
-        if value is None:
-            lines.append(f"{indent_str}{key}: null")
-        elif isinstance(value, bool):
-            lines.append(f"{indent_str}{key}: {str(value).lower()}")
-        elif isinstance(value, (int, float)):
-            lines.append(f"{indent_str}{key}: {value}")
-        elif isinstance(value, str):
-            # Quote if contains special chars, otherwise plain
-            if ':' in value or '#' in value or value.startswith(('- ', '* ')):
-                lines.append(f"{indent_str}{key}: '{value}'")
-            else:
-                lines.append(f"{indent_str}{key}: {value}")
-        elif isinstance(value, list):
-            if not value:
-                lines.append(f"{indent_str}{key}: []")
-            else:
-                lines.append(f"{indent_str}{key}:")
-                for item in value:
-                    if isinstance(item, dict):
-                        lines.append(f"{indent_str}  -")
-                        for subline in dict_to_yaml(item, indent + 2).split('\n'):
-                            if subline.strip():
-                                lines.append(f"  {subline}")
-                    else:
-                        lines.append(f"{indent_str}  - {item}")
-        elif isinstance(value, dict):
-            if not value:
-                lines.append(f"{indent_str}{key}: {{}}")
-            else:
-                lines.append(f"{indent_str}{key}:")
-                for subline in dict_to_yaml(value, indent + 1).split('\n'):
-                    if subline.strip():
-                        lines.append(subline)
-        else:
-            # Fallback for other types
-            lines.append(f"{indent_str}{key}: {value}")
-
-    return '\n'.join(lines)
 
 def gather_project_info():
     """Gather basic project information"""
@@ -177,8 +148,7 @@ def create_config(project_info, stack):
 
     config_path = Path('.spec-drive/config.yaml')
     with open(config_path, 'w') as f:
-        f.write(dict_to_yaml(config))
-        f.write('\n')
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
     print(f"✓ Created: {config_path}")
 
@@ -194,8 +164,7 @@ def create_state():
 
     state_path = Path('.spec-drive/state.yaml')
     with open(state_path, 'w') as f:
-        f.write(dict_to_yaml(state))
-        f.write('\n')
+        yaml.dump(state, f, default_flow_style=False, sort_keys=False)
 
     print(f"✓ Created: {state_path}")
 
@@ -216,8 +185,7 @@ def create_index(project_info):
 
     index_path = Path('.spec-drive/index.yaml')
     with open(index_path, 'w') as f:
-        f.write(dict_to_yaml(index))
-        f.write('\n')
+        yaml.dump(index, f, default_flow_style=False, sort_keys=False)
 
     print(f"✓ Created: {index_path}")
 
