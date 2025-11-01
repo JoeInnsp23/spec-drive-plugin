@@ -772,7 +772,89 @@ User: /spec-drive:feature AUTH-001 "User authentication"
 
 ---
 
-## 11. APPENDIX: TECHNICAL SPECIFICATIONS
+## 11. PLANNING DOCUMENT STRUCTURE
+
+### Planning Documents Organization
+
+This PRD is part of a comprehensive planning documentation set located in:
+```
+.spec-drive/development/current/
+├── PRD.md                        # This document
+├── TDD.md                        # Technical Design Document
+├── IMPLEMENTATION-PLAN.md        # High-level implementation phases
+├── TEST-PLAN.md                  # Testing strategy and scenarios
+├── RISK-ASSESSMENT.md            # Risk identification and mitigation
+├── STATUS.md                     # Project status tracking
+├── DECISIONS.md                  # Key decisions log
+├── DOCUMENTATION-REVIEW.md       # Documentation health check
+├── tasks/                        # Individual task files (detailed)
+│   ├── task-001-*.md
+│   ├── task-002-*.md
+│   └── ...
+└── adr/                          # Architecture Decision Records
+    ├── ADR-0001-*.md
+    └── ...
+```
+
+### Task-Based Implementation
+
+Rather than a single monolithic IMPLEMENTATION-PLAN.md (which becomes too long to read), implementation is broken into individual task files in the `tasks/` directory.
+
+**Each task file (`task-XXX-name.md`) contains:**
+- Task ID and title
+- Status (not-started, in-progress, blocked, completed)
+- Dependencies (what tasks must complete first)
+- Acceptance criteria (testable conditions)
+- Implementation details (steps, files, code snippets)
+- Testing approach (how to verify)
+- Risks and mitigations
+- Completion checklist
+
+**Benefits:**
+- **Readable:** Each task is self-contained and focused
+- **Trackable:** Clear status per task
+- **Parallelizable:** Independent tasks can be worked concurrently
+- **Reviewable:** Easy to review individual tasks
+- **AI-friendly:** Claude can read one task file at a time
+
+**Task Organization:**
+```
+tasks/
+├── phase-1-foundation/
+│   ├── task-001-plugin-manifest.md
+│   ├── task-002-slash-command.md
+│   └── ...
+├── phase-2-workflows/
+│   ├── task-020-workflow-engine.md
+│   ├── task-021-app-new-workflow.md
+│   └── ...
+├── phase-3-autodocs/
+│   ├── task-040-doc-structure.md
+│   ├── task-041-doc-index-agent.md
+│   └── ...
+└── phase-4-quality-gates/
+    ├── task-060-gate-1-specify.md
+    └── ...
+```
+
+### Planning Templates
+
+Templates for all planning documents are available in:
+```
+.spec-drive/templates/planning/
+├── PRD-TEMPLATE.md
+├── TDD-TEMPLATE.md
+├── TEST-PLAN-TEMPLATE.md
+├── RISK-ASSESSMENT-TEMPLATE.md
+├── STATUS-TEMPLATE.md
+└── TASK-TEMPLATE.md
+```
+
+These templates ensure consistent structure across all planning documents.
+
+---
+
+## 12. APPENDIX: TECHNICAL SPECIFICATIONS
 
 ### Plugin Structure
 ```
