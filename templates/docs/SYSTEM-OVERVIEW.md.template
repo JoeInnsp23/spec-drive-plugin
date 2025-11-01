@@ -23,8 +23,8 @@ This section describes the overall system architecture and key components.
 
 **Stack Profile:** {{STACK}}
 
-<!-- AUTO:BEGIN:STACK-INFO -->
-<!-- AUTO:END:STACK-INFO -->
+<!-- AUTO:stack-info -->
+<!-- /AUTO -->
 
 ## Getting Started
 

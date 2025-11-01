@@ -23,9 +23,9 @@ This document describes the technical architecture of {{PROJECT_NAME}}.
 
 ## Component Architecture
 
-<!-- AUTO:BEGIN:COMPONENT-DIAGRAM -->
+<!-- AUTO:component-diagram -->
 <!-- TODO: Component diagram -->
-<!-- AUTO:END:COMPONENT-DIAGRAM -->
+<!-- /AUTO -->
 
 ### Component 1
 

@@ -62,7 +62,7 @@ How is this different from existing solutions?
 
 ## Feature Status
 
-<!-- AUTO:BEGIN:FEATURE-STATUS -->
+<!-- AUTO:feature-status -->
 
 ### Planned
 
@@ -77,7 +77,7 @@ How is this different from existing solutions?
 
 - [x] Feature D (SPEC-004)
 
-<!-- AUTO:END:FEATURE-STATUS -->
+<!-- /AUTO -->
 
 ## Roadmap
 

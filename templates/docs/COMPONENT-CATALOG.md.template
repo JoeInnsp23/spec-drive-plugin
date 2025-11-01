@@ -7,7 +7,7 @@
 
 This catalog lists all components in {{PROJECT_NAME}} with their purpose and key information.
 
-<!-- AUTO:BEGIN:COMPONENT-LIST -->
+<!-- AUTO:component-list -->
 
 ## Components
 
@@ -27,7 +27,7 @@ This catalog lists all components in {{PROJECT_NAME}} with their purpose and key
 - **Status:** Active
 - **Dependencies:** None
 
-<!-- AUTO:END:COMPONENT-LIST -->
+<!-- /AUTO -->
 
 ## Component Map
 
