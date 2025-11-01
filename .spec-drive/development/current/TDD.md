@@ -701,13 +701,1082 @@ specs:
 
 ## 6. COMPONENT BREAKDOWN
 
-*(To be completed in Step 2 - TDD Component Breakdown)*
+### 6.1 Component Architecture Overview
+
+spec-drive v0.1 consists of **27 primary components** organized into 6 subsystems:
+
+```
+spec-drive/
+├── hooks/                    # Subsystem 1: Hook System (2 components)
+├── commands/                 # Subsystem 2: Slash Commands (2 components)
+├── scripts/
+│   ├── workflows/            # Subsystem 3: Workflow Orchestrators (2 components)
+│   ├── gates/                # Subsystem 4: Quality Gates (4 components)
+│   └── tools/                # Subsystem 5: Autodocs Tools (7 components)
+└── templates/                # Subsystem 6: Templates (10 components)
+```
+
+---
+
+### 6.2 Subsystem 1: Hook System
+
+**Purpose:** Auto-inject behavior and track tool usage during Claude Code sessions.
+
+#### Component 1.1: hooks/hooks.json
+
+**Type:** Configuration File
+**Responsibility:** Register hooks with Claude Code plugin system
+
+**Schema:**
+```json
+{
+  "hooks": {
+    "SessionStart": {
+      "handler": "spec-drive/hooks/handlers/session-start.sh",
+      "description": "Inject strict-concise behavior for all sessions"
+    },
+    "PostToolUse": {
+      "handler": "spec-drive/hooks/handlers/post-tool-use.sh",
+      "description": "Set dirty flag when code/docs change"
+    }
+  }
+}
+```
+
+**Dependencies:** None
+**Inputs:** None
+**Outputs:** Hook registration in Claude Code
+**Performance:** <10ms (one-time registration)
+
+#### Component 1.2: hooks/handlers/session-start.sh
+
+**Type:** Bash Script
+**Responsibility:** Inject strict-concise behavior content into Claude Code session
+
+**Pseudocode:**
+```bash
+#!/bin/bash
+# Inject behavior optimization content
+cat spec-drive/assets/strict-concise-behavior.md
+```
+
+**Dependencies:**
+- `spec-drive/assets/strict-concise-behavior.md` (behavior content)
+
+**Inputs:** None
+**Outputs:** Behavior markdown content to stdout (consumed by Claude Code)
+**Performance:** <100ms (cat operation)
+**Error Handling:** Exit 1 if behavior file not found
+
+#### Component 1.3: hooks/handlers/post-tool-use.sh
+
+**Type:** Bash Script
+**Responsibility:** Set dirty flag in state.yaml when code/docs change
+
+**Pseudocode:**
+```bash
+#!/bin/bash
+TOOL_NAME=$1
+TOOL_ARGS=$2
+
+# Check if tool affects code or docs
+if [[ "$TOOL_NAME" =~ ^(Edit|Write|NotebookEdit)$ ]]; then
+  # Tool affects code/docs → set dirty flag
+  yq eval '.dirty = true' -i .spec-drive/state.yaml
+fi
+```
+
+**Dependencies:**
+- `yq` (YAML processor)
+- `.spec-drive/state.yaml`
+
+**Inputs:**
+- `$1`: Tool name (Edit, Write, NotebookEdit, etc.)
+- `$2`: Tool arguments
+
+**Outputs:**
+- Updates `.spec-drive/state.yaml` (sets `dirty: true`)
+
+**Performance:** <50ms (YAML update)
+**Error Handling:** Silently fail if state.yaml not found (project not initialized)
+
+---
+
+### 6.3 Subsystem 2: Slash Commands
+
+**Purpose:** Entry points for user-initiated workflows.
+
+#### Component 2.1: commands/app-new.md
+
+**Type:** Markdown Slash Command
+**Responsibility:** Launch new project initialization workflow
+
+**Content Structure:**
+```markdown
+# /spec-drive:app-new
+
+You are starting the **app-new** workflow for a new project.
+
+## Current Stage: DISCOVER
+
+Your task:
+1. Ask the user about project vision, goals, users
+2. Guide planning session for:
+   - Project purpose and scope
+   - Target users and use cases
+   - Initial architecture decisions
+   - Tech stack selection
+
+3. After planning complete, advance to SPECIFY stage:
+   - Create .spec-drive/specs/APP-001.yaml
+   - Document project requirements
+
+4. Then IMPLEMENT stage:
+   - Generate full docs/ structure
+   - Create .spec-drive/ config and index
+
+5. Finally VERIFY stage:
+   - Ensure documentation complete
+   - Ready for feature development
+
+State file: .spec-drive/state.yaml
+Current workflow: app-new
+```
+
+**Dependencies:**
+- `scripts/workflows/app-new.sh` (orchestrator)
+- `.spec-drive/state.yaml`
+
+**Inputs:** None (user invokes via `/spec-drive:app-new`)
+**Outputs:** Claude Code prompt instructing app-new workflow
+**Performance:** <10ms (markdown read)
+
+#### Component 2.2: commands/feature.md
+
+**Type:** Markdown Slash Command
+**Responsibility:** Launch feature development workflow
+
+**Content Structure:**
+```markdown
+# /spec-drive:feature [SPEC-ID] [title]
+
+You are starting the **feature** workflow.
+
+## Arguments
+- SPEC-ID: Feature spec identifier (e.g., AUTH-001)
+- title: Brief feature description
+
+## Current Stage: {READ FROM state.yaml}
+
+Your task:
+1. DISCOVER: Explore context, existing code, requirements
+2. SPECIFY: Create .spec-drive/specs/{SPEC-ID}.yaml with ACs
+3. IMPLEMENT: Write code + tests with @spec tags
+4. VERIFY: All gates pass, docs updated, traceability complete
+
+Quality gates will run automatically at stage transitions.
+
+State file: .spec-drive/state.yaml
+```
+
+**Dependencies:**
+- `scripts/workflows/feature.sh` (orchestrator)
+- `.spec-drive/state.yaml`
+
+**Inputs:**
+- `SPEC-ID`: Feature identifier
+- `title`: Feature title
+
+**Outputs:** Claude Code prompt instructing feature workflow
+**Performance:** <10ms (markdown read)
+
+---
+
+### 6.4 Subsystem 3: Workflow Orchestrators
+
+**Purpose:** Manage workflow state transitions and gate enforcement.
+
+#### Component 3.1: scripts/workflows/app-new.sh
+
+**Type:** Bash Script
+**Responsibility:** Orchestrate app-new workflow stages
+
+**Pseudocode:**
+```bash
+#!/bin/bash
+# Initialize new project workflow
+
+STAGE=${1:-"discover"}  # Current stage
+PROJECT_NAME=${2:-""}
+
+case $STAGE in
+  discover)
+    echo "DISCOVER stage: Planning session"
+    # User does planning (no automation in v0.1)
+    ;;
+
+  specify)
+    echo "Creating APP-001.yaml spec"
+    scripts/tools/create-spec.sh APP-001 "Project: $PROJECT_NAME"
+    yq eval '.current_stage = "specify"' -i .spec-drive/state.yaml
+    ;;
+
+  implement)
+    echo "Generating documentation structure"
+    scripts/tools/init-docs.sh
+    scripts/tools/generate-index.sh
+    yq eval '.current_stage = "implement"' -i .spec-drive/state.yaml
+    ;;
+
+  verify)
+    echo "Running gate-4-done"
+    scripts/gates/gate-4-done.sh
+    if [ $? -eq 0 ]; then
+      yq eval '.workflows.APP-001.status = "done"' -i .spec-drive/state.yaml
+      echo "✅ App-new workflow complete"
+    fi
+    ;;
+esac
+```
+
+**Dependencies:**
+- `scripts/tools/create-spec.sh`
+- `scripts/tools/init-docs.sh`
+- `scripts/tools/generate-index.sh`
+- `scripts/gates/gate-4-done.sh`
+- `yq` (YAML processor)
+
+**Inputs:**
+- `$1`: Current stage (discover, specify, implement, verify)
+- `$2`: Project name
+
+**Outputs:**
+- Updates `.spec-drive/state.yaml`
+- Creates `.spec-drive/specs/APP-001.yaml`
+- Generates `docs/` structure
+
+**Performance:** <30 seconds (full workflow)
+**Error Handling:** Exit non-zero if gate fails
+
+#### Component 3.2: scripts/workflows/feature.sh
+
+**Type:** Bash Script
+**Responsibility:** Orchestrate feature workflow stages
+
+**Pseudocode:**
+```bash
+#!/bin/bash
+# Feature development workflow
+
+SPEC_ID=$1
+STAGE=${2:-"discover"}
+
+case $STAGE in
+  discover)
+    echo "DISCOVER: Exploring context for $SPEC_ID"
+    yq eval '.current_spec = "'$SPEC_ID'"' -i .spec-drive/state.yaml
+    yq eval '.current_stage = "discover"' -i .spec-drive/state.yaml
+    ;;
+
+  specify)
+    echo "SPECIFY: Running gate-1"
+    scripts/gates/gate-1-specify.sh $SPEC_ID
+    if [ $? -eq 0 ]; then
+      yq eval '.current_stage = "specify"' -i .spec-drive/state.yaml
+      yq eval '.can_advance = true' -i .spec-drive/state.yaml
+    fi
+    ;;
+
+  implement)
+    echo "IMPLEMENT: Running gate-2"
+    scripts/gates/gate-2-implement.sh $SPEC_ID
+    if [ $? -eq 0 ]; then
+      yq eval '.current_stage = "implement"' -i .spec-drive/state.yaml
+    fi
+    ;;
+
+  verify)
+    echo "VERIFY: Running gate-3 and gate-4"
+    scripts/gates/gate-3-verify.sh $SPEC_ID
+    scripts/gates/gate-4-done.sh $SPEC_ID
+    if [ $? -eq 0 ]; then
+      yq eval '.workflows.'$SPEC_ID'.status = "done"' -i .spec-drive/state.yaml
+      echo "✅ Feature $SPEC_ID complete"
+    fi
+    ;;
+esac
+```
+
+**Dependencies:**
+- All gate scripts (`gate-1` through `gate-4`)
+- `yq` (YAML processor)
+
+**Inputs:**
+- `$1`: SPEC-ID
+- `$2`: Current stage
+
+**Outputs:**
+- Updates `.spec-drive/state.yaml`
+- Triggers gate checks
+- Triggers autodocs (if dirty flag set)
+
+**Performance:** <500ms per stage (excluding gate execution)
+**Error Handling:** Block advancement if gate fails
+
+---
+
+### 6.5 Subsystem 4: Quality Gates
+
+**Purpose:** Enforce quality criteria at workflow stage boundaries.
+
+#### Component 4.1: scripts/gates/gate-1-specify.sh
+
+**Type:** Bash Script
+**Responsibility:** Verify spec file created and complete
+
+**Checks:**
+```bash
+#!/bin/bash
+SPEC_ID=$1
+SPEC_FILE=".spec-drive/specs/$SPEC_ID.yaml"
+
+# Check 1: Spec file exists
+if [ ! -f "$SPEC_FILE" ]; then
+  echo "❌ Gate 1 FAILED: Spec file not found: $SPEC_FILE"
+  exit 1
+fi
+
+# Check 2: No [NEEDS CLARIFICATION] markers
+if grep -q "\[NEEDS CLARIFICATION\]" "$SPEC_FILE"; then
+  echo "❌ Gate 1 FAILED: Spec contains [NEEDS CLARIFICATION] markers"
+  exit 1
+fi
+
+# Check 3: Success criteria defined
+if ! yq eval '.success_criteria' "$SPEC_FILE" | grep -q "."; then
+  echo "❌ Gate 1 FAILED: No success criteria defined"
+  exit 1
+fi
+
+echo "✅ Gate 1 PASSED: Spec complete and ready"
+exit 0
+```
+
+**Dependencies:**
+- `yq` (YAML processor)
+- `grep`
+
+**Inputs:** `$1` = SPEC-ID
+**Outputs:** Exit 0 (pass) or 1 (fail)
+**Performance:** <500ms
+
+#### Component 4.2: scripts/gates/gate-2-implement.sh
+
+**Type:** Bash Script
+**Responsibility:** Verify spec has testable acceptance criteria
+
+**Checks:**
+```bash
+#!/bin/bash
+SPEC_ID=$1
+SPEC_FILE=".spec-drive/specs/$SPEC_ID.yaml"
+
+# Check 1: Acceptance criteria defined
+AC_COUNT=$(yq eval '.acceptance_criteria | length' "$SPEC_FILE")
+if [ "$AC_COUNT" -eq 0 ]; then
+  echo "❌ Gate 2 FAILED: No acceptance criteria defined"
+  exit 1
+fi
+
+# Check 2: Each AC has testable description
+for i in $(seq 0 $(($AC_COUNT - 1))); do
+  AC=$(yq eval ".acceptance_criteria[$i]" "$SPEC_FILE")
+  if [[ -z "$AC" ]]; then
+    echo "❌ Gate 2 FAILED: AC $i is empty"
+    exit 1
+  fi
+done
+
+echo "✅ Gate 2 PASSED: Spec ready for implementation"
+exit 0
+```
+
+**Dependencies:**
+- `yq` (YAML processor)
+
+**Inputs:** `$1` = SPEC-ID
+**Outputs:** Exit 0 (pass) or 1 (fail)
+**Performance:** <500ms
+
+#### Component 4.3: scripts/gates/gate-3-verify.sh
+
+**Type:** Bash Script
+**Responsibility:** Verify implementation complete with tests and @spec tags
+
+**Checks:**
+```bash
+#!/bin/bash
+SPEC_ID=$1
+
+# Check 1: Tests pass
+echo "Running tests..."
+npm test
+if [ $? -ne 0 ]; then
+  echo "❌ Gate 3 FAILED: Tests failing"
+  exit 1
+fi
+
+# Check 2: @spec tags present in code
+CODE_TAGS=$(grep -r "@spec $SPEC_ID" src/ | wc -l)
+if [ "$CODE_TAGS" -eq 0 ]; then
+  echo "❌ Gate 3 FAILED: No @spec $SPEC_ID tags in src/"
+  exit 1
+fi
+
+# Check 3: @spec tags present in tests
+TEST_TAGS=$(grep -r "@spec $SPEC_ID" tests/ | wc -l)
+if [ "$TEST_TAGS" -eq 0 ]; then
+  echo "❌ Gate 3 FAILED: No @spec $SPEC_ID tags in tests/"
+  exit 1
+fi
+
+# Check 4: No linting errors
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Gate 3 FAILED: Linting errors"
+  exit 1
+fi
+
+echo "✅ Gate 3 PASSED: Implementation complete"
+exit 0
+```
+
+**Dependencies:**
+- `npm` (test and lint commands)
+- `grep`
+
+**Inputs:** `$1` = SPEC-ID
+**Outputs:** Exit 0 (pass) or 1 (fail)
+**Performance:** <10 seconds (depends on test suite)
+
+#### Component 4.4: scripts/gates/gate-4-done.sh
+
+**Type:** Bash Script
+**Responsibility:** Verify docs updated and traceability complete
+
+**Checks:**
+```bash
+#!/bin/bash
+SPEC_ID=$1
+
+# Check 1: No TODO/console.log in code
+SHORTCUTS=$(grep -r "TODO\|console\.log" src/ | wc -l)
+if [ "$SHORTCUTS" -gt 0 ]; then
+  echo "❌ Gate 4 FAILED: Found $SHORTCUTS TODO/console.log instances"
+  exit 1
+fi
+
+# Check 2: Index has trace for this spec
+TRACE_COUNT=$(yq eval '.specs[] | select(.id == "'$SPEC_ID'") | .trace.code | length' .spec-drive/index.yaml)
+if [ "$TRACE_COUNT" -eq 0 ]; then
+  echo "❌ Gate 4 FAILED: No trace in index.yaml for $SPEC_ID"
+  exit 1
+fi
+
+# Check 3: Feature doc exists
+if [ ! -f "docs/60-features/$SPEC_ID.md" ]; then
+  echo "❌ Gate 4 FAILED: Feature doc not found: docs/60-features/$SPEC_ID.md"
+  exit 1
+fi
+
+# Check 4: Dirty flag cleared (docs updated)
+DIRTY=$(yq eval '.dirty' .spec-drive/state.yaml)
+if [ "$DIRTY" = "true" ]; then
+  echo "❌ Gate 4 FAILED: Dirty flag still set (docs not updated)"
+  exit 1
+fi
+
+echo "✅ Gate 4 PASSED: Spec complete and verified"
+exit 0
+```
+
+**Dependencies:**
+- `yq` (YAML processor)
+- `grep`
+
+**Inputs:** `$1` = SPEC-ID
+**Outputs:** Exit 0 (pass) or 1 (fail)
+**Performance:** <1 second
+
+---
+
+### 6.6 Subsystem 5: Autodocs Tools
+
+**Purpose:** Analyze code, generate index, and update documentation.
+
+#### Component 5.1: scripts/tools/analyze-codebase.js
+
+**Type:** Node.js Script
+**Responsibility:** Deep code analysis for existing projects
+
+**Logic:**
+```javascript
+// Analyze codebase and extract structure
+const fs = require('fs');
+const path = require('path');
+
+async function analyzeCodebase(srcDir) {
+  const components = [];
+  const files = walkDir(srcDir);
+
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+
+    // Detect components (classes, functions, modules)
+    const detectedComponents = detectComponents(content, file);
+    components.push(...detectedComponents);
+  }
+
+  // Map dependencies between components
+  const dependencyMap = buildDependencyMap(components);
+
+  return { components, dependencies: dependencyMap };
+}
+
+function detectComponents(code, filePath) {
+  // Regex patterns for different component types
+  // TypeScript: class, interface, function, const exports
+  // Python: class, def
+  // Generic: exported symbols
+}
+
+function buildDependencyMap(components) {
+  // Analyze imports/requires to map dependencies
+}
+```
+
+**Dependencies:**
+- Node.js fs, path modules
+- `@babel/parser` (for TypeScript/JavaScript parsing)
+
+**Inputs:** `srcDir` (project source directory)
+**Outputs:** JSON object with components and dependencies
+**Performance:** <60 seconds for medium codebase (~10k LOC)
+
+#### Component 5.2: scripts/tools/index-docs.js
+
+**Type:** Node.js Script
+**Responsibility:** Build/update index.yaml from code and specs
+
+**Logic:**
+```javascript
+// Generate index.yaml
+const yaml = require('js-yaml');
+const fs = require('fs');
+
+async function buildIndex(projectRoot) {
+  const index = {
+    meta: {
+      generated: new Date().toISOString(),
+      version: '0.1.0',
+      project_name: getProjectName(projectRoot)
+    },
+    components: [],
+    specs: [],
+    docs: [],
+    code: []
+  };
+
+  // 1. Scan specs/
+  index.specs = scanSpecs(`${projectRoot}/.spec-drive/specs/`);
+
+  // 2. Scan code for @spec tags
+  index.code = scanCodeForSpecTags(`${projectRoot}/src/`);
+
+  // 3. Scan tests for @spec tags
+  const testTraces = scanCodeForSpecTags(`${projectRoot}/tests/`);
+
+  // 4. Map traces to specs
+  index.specs = mapTracesToSpecs(index.specs, index.code, testTraces);
+
+  // 5. Scan docs/
+  index.docs = scanDocs(`${projectRoot}/docs/`);
+
+  // 6. Write index.yaml
+  fs.writeFileSync(
+    `${projectRoot}/.spec-drive/index.yaml`,
+    yaml.dump(index)
+  );
+}
+```
+
+**Dependencies:**
+- `js-yaml` (YAML parsing)
+- `grep` (for @spec tag detection)
+
+**Inputs:** `projectRoot` (project directory)
+**Outputs:** `.spec-drive/index.yaml` file
+**Performance:** <5 seconds for medium codebase
+
+#### Component 5.3: scripts/tools/update-docs.js
+
+**Type:** Node.js Script
+**Responsibility:** Regenerate docs from index and templates
+
+**Logic:**
+```javascript
+// Regenerate documentation
+const fs = require('fs');
+const yaml = require('js-yaml');
+
+async function updateDocs(projectRoot) {
+  const index = yaml.load(fs.readFileSync(`${projectRoot}/.spec-drive/index.yaml`));
+  const dirty = checkDirtyFlag(projectRoot);
+
+  if (!dirty) {
+    console.log('No changes, skipping doc update');
+    return;
+  }
+
+  // 1. Update COMPONENT-CATALOG.md
+  if (componentsChanged(index)) {
+    regenerateComponentCatalog(index.components, projectRoot);
+  }
+
+  // 2. Update feature pages (docs/60-features/*.md)
+  for (const spec of index.specs) {
+    if (specChanged(spec)) {
+      regenerateFeaturePage(spec, projectRoot);
+    }
+  }
+
+  // 3. Update API docs (if APIs changed)
+  if (apisChanged(index)) {
+    regenerateApiDocs(index, projectRoot);
+  }
+
+  // 4. Clear dirty flag
+  clearDirtyFlag(projectRoot);
+}
+```
+
+**Dependencies:**
+- `js-yaml` (YAML parsing)
+- Template files (`templates/docs/*.template`)
+
+**Inputs:** `projectRoot` (project directory)
+**Outputs:**
+- Updated `docs/10-architecture/COMPONENT-CATALOG.md`
+- Updated `docs/60-features/SPEC-*.md` files
+- Updated `docs/40-api/*.md` files
+
+**Performance:** <3 seconds for affected docs only
+
+#### Component 5.4-5.7: Supporting Tools
+
+**5.4: scripts/tools/create-spec.sh** - Generate spec YAML from template
+**5.5: scripts/tools/init-docs.sh** - Initialize docs/ structure for new projects
+**5.6: scripts/tools/generate-index.sh** - Wrapper for index-docs.js
+**5.7: scripts/tools/validate-spec.sh** - Validate spec YAML against schema
+
+---
+
+### 6.7 Subsystem 6: Templates
+
+**Purpose:** Provide structure and content templates for docs and specs.
+
+#### Component 6.1: templates/spec-template.yaml
+
+**Type:** YAML Template
+**Purpose:** Spec file structure
+
+**Structure:**
+```yaml
+id: "{{SPEC_ID}}"
+title: "{{TITLE}}"
+status: draft
+created: "{{DATE}}"
+updated: "{{DATE}}"
+
+summary: |
+  Brief description of the feature
+
+acceptance_criteria:
+  - criterion: "AC1 description"
+    testable: true
+  - criterion: "AC2 description"
+    testable: true
+
+success_criteria:
+  - "Measurable success metric 1"
+  - "Measurable success metric 2"
+
+dependencies: []
+risks: []
+```
+
+#### Component 6.2-6.11: Documentation Templates
+
+**6.2: templates/docs/SYSTEM-OVERVIEW.md.template** - Project overview
+**6.3: templates/docs/GLOSSARY.md.template** - Terminology
+**6.4: templates/docs/ARCHITECTURE.md.template** - System architecture
+**6.5: templates/docs/COMPONENT-CATALOG.md.template** - Component registry (AUTO-updated)
+**6.6: templates/docs/DATA-FLOWS.md.template** - Data movement
+**6.7: templates/docs/RUNTIME-DEPLOYMENT.md.template** - Deployment
+**6.8: templates/docs/BUILD-RELEASE.md.template** - Build process
+**6.9: templates/docs/PRODUCT-BRIEF.md.template** - Goals, roadmap
+**6.10: templates/docs/FEATURE-SPEC.md.template** - Feature page (AUTO-generated)
+**6.11: templates/index-template.yaml** - index.yaml structure
 
 ---
 
 ## 7. DATA FLOWS
 
-*(To be completed in Step 2 - TDD Data Flows)*
+### 7.1 Complete Feature Development Flow
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│              END-TO-END FEATURE WORKFLOW DATA FLOW               │
+└──────────────────────────────────────────────────────────────────┘
+
+USER: /spec-drive:feature AUTH-001 "User authentication"
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. SLASH COMMAND PROCESSING                                     │
+└─────────────────────────────────────────────────────────────────┘
+  commands/feature.md
+    │
+    ├─ Parse arguments: SPEC_ID="AUTH-001", title="User authentication"
+    └─ Invoke: scripts/workflows/feature.sh AUTH-001 discover
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. WORKFLOW ORCHESTRATOR                                        │
+└─────────────────────────────────────────────────────────────────┘
+  scripts/workflows/feature.sh
+    │
+    ├─ Update state.yaml:
+    │    current_workflow: feature
+    │    current_spec: AUTH-001
+    │    current_stage: discover
+    │
+    └─ User performs discovery (explore code, gather requirements)
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. POSTTOOLUSE HOOK (During Discovery)                         │
+└─────────────────────────────────────────────────────────────────┘
+  hooks/handlers/post-tool-use.sh
+    │
+    ├─ Detect: User used Edit/Write tools
+    └─ Update state.yaml: dirty = true
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. STAGE TRANSITION: DISCOVER → SPECIFY                        │
+└─────────────────────────────────────────────────────────────────┘
+  scripts/workflows/feature.sh AUTH-001 specify
+    │
+    ├─ Run gate-1-specify.sh AUTH-001
+    │    │
+    │    ├─ Check: .spec-drive/specs/AUTH-001.yaml exists?
+    │    ├─ Check: No [NEEDS CLARIFICATION] markers?
+    │    └─ Check: Success criteria defined?
+    │
+    ├─ If gate passes:
+    │    └─ Update state.yaml: can_advance = true, current_stage = specify
+    │
+    └─ If gate fails:
+         └─ Update state.yaml: can_advance = false
+             (Behavior agent blocks advancement)
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. STAGE TRANSITION: SPECIFY → IMPLEMENT                       │
+└─────────────────────────────────────────────────────────────────┘
+  scripts/workflows/feature.sh AUTH-001 implement
+    │
+    ├─ Run gate-2-implement.sh AUTH-001
+    │    └─ Check: Acceptance criteria testable?
+    │
+    ├─ User writes code with /** @spec AUTH-001 */ tags
+    └─ User writes tests with /** @spec AUTH-001 */ tags
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 6. STAGE TRANSITION: IMPLEMENT → VERIFY                        │
+└─────────────────────────────────────────────────────────────────┘
+  scripts/workflows/feature.sh AUTH-001 verify
+    │
+    ├─ Run gate-3-verify.sh AUTH-001
+    │    │
+    │    ├─ Run: npm test
+    │    ├─ Check: @spec AUTH-001 tags in src/
+    │    ├─ Check: @spec AUTH-001 tags in tests/
+    │    └─ Run: npm run lint
+    │
+    └─ If gate passes:
+         └─ Proceed to gate-4
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 7. FINAL GATE: VERIFY → DONE                                   │
+└─────────────────────────────────────────────────────────────────┘
+  scripts/gates/gate-4-done.sh AUTH-001
+    │
+    ├─ Check: No TODO/console.log in src/
+    ├─ Check: Trace exists in index.yaml
+    ├─ Check: Feature doc exists (docs/60-features/AUTH-001.md)
+    └─ Check: dirty = false (docs updated)
+        │
+        ├─ If dirty = true → Trigger autodocs
+        │    │
+        │    ▼
+        │  ┌─────────────────────────────────────────────────────┐
+        │  │ 8. AUTODOCS EXECUTION                               │
+        │  └─────────────────────────────────────────────────────┘
+        │    scripts/tools/index-docs.js
+        │      │
+        │      ├─ Scan src/ for @spec AUTH-001 tags → find file:line
+        │      ├─ Scan tests/ for @spec AUTH-001 tags → find file:line
+        │      ├─ Update index.yaml:
+        │      │    specs[AUTH-001].trace.code = ["src/auth/login.ts:42"]
+        │      │    specs[AUTH-001].trace.tests = ["tests/auth/login.test.ts:12"]
+        │      │
+        │      └─ Invoke: scripts/tools/update-docs.js
+        │           │
+        │           ├─ Regenerate: docs/60-features/AUTH-001.md
+        │           ├─ Update: docs/10-architecture/COMPONENT-CATALOG.md
+        │           └─ Clear: state.yaml dirty = false
+        │
+        └─ Re-run gate-4 → passes
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 9. WORKFLOW COMPLETION                                          │
+└─────────────────────────────────────────────────────────────────┘
+  scripts/workflows/feature.sh
+    │
+    └─ Update state.yaml:
+         workflows.AUTH-001.status = done
+         current_workflow = null
+         current_spec = null
+         current_stage = null
+
+✅ Feature AUTH-001 complete with full traceability
+```
+
+### 7.2 Data Flow: Autodocs Trigger Mechanism
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    AUTODOCS TRIGGER FLOW                         │
+└──────────────────────────────────────────────────────────────────┘
+
+Developer writes code (Edit/Write tool)
+  │
+  ▼
+PostToolUse Hook fires
+  │
+  ├─ Detects: Tool = Edit or Write
+  └─ Updates: .spec-drive/state.yaml
+       dirty: true
+  │
+  ▼
+Development continues...
+  │
+  ▼
+Stage boundary reached (e.g., Implement → Verify)
+  │
+  ▼
+Quality gate executes (gate-3-verify.sh)
+  │
+  ├─ Tests pass? ✅
+  ├─ @spec tags present? ✅
+  └─ Lint clean? ✅
+  │
+  ▼
+Gate-4-done.sh executes
+  │
+  ├─ Checks: dirty flag in state.yaml
+  └─ If dirty = true:
+       │
+       ▼
+     AUTODOCS TRIGGERED
+       │
+       ├─ 1. Run: scripts/tools/index-docs.js
+       │      │
+       │      ├─ Scan code for @spec tags
+       │      ├─ Update index.yaml (traces)
+       │      └─ Update index.yaml (component changes)
+       │
+       ├─ 2. Run: scripts/tools/update-docs.js
+       │      │
+       │      ├─ Read: index.yaml
+       │      ├─ Regenerate: docs/60-features/SPEC-ID.md
+       │      ├─ Update: docs/10-architecture/COMPONENT-CATALOG.md
+       │      └─ Update: docs/40-api/*.md (if APIs changed)
+       │
+       └─ 3. Clear dirty flag
+            └─ Update: .spec-drive/state.yaml
+                 dirty: false
+  │
+  ▼
+Gate-4 re-checks: dirty = false? ✅
+  │
+  ▼
+Workflow completes
+```
+
+### 7.3 Data Flow: Index Generation
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    INDEX GENERATION FLOW                         │
+└──────────────────────────────────────────────────────────────────┘
+
+scripts/tools/index-docs.js invoked
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. SCAN SPECS                                                   │
+└─────────────────────────────────────────────────────────────────┘
+  Read: .spec-drive/specs/*.yaml
+    │
+    └─ Extract: id, title, status, acceptance_criteria
+        │
+        ▼ Output: specs[] array
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. SCAN CODE FOR @SPEC TAGS                                    │
+└─────────────────────────────────────────────────────────────────┘
+  Run: grep -rn "@spec" src/
+    │
+    ├─ Find: src/auth/login.ts:42: /** @spec AUTH-001 */
+    ├─ Find: src/auth/session.ts:18: /** @spec AUTH-001 */
+    └─ Map: AUTH-001 → ["src/auth/login.ts:42", "src/auth/session.ts:18"]
+        │
+        ▼ Output: code_traces map
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. SCAN TESTS FOR @SPEC TAGS                                   │
+└─────────────────────────────────────────────────────────────────┘
+  Run: grep -rn "@spec" tests/
+    │
+    ├─ Find: tests/auth/login.test.ts:12: /** @spec AUTH-001 */
+    └─ Map: AUTH-001 → ["tests/auth/login.test.ts:12"]
+        │
+        ▼ Output: test_traces map
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. MERGE TRACES INTO SPECS                                     │
+└─────────────────────────────────────────────────────────────────┘
+  For each spec in specs[]:
+    │
+    ├─ spec.trace.code = code_traces[spec.id]
+    ├─ spec.trace.tests = test_traces[spec.id]
+    └─ spec.trace.docs = ["docs/60-features/${spec.id}.md"]
+        │
+        ▼ Output: specs[] with full traces
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. SCAN DOCS METADATA                                          │
+└─────────────────────────────────────────────────────────────────┘
+  Walk: docs/**/*.md
+    │
+    ├─ Extract frontmatter: type, summary
+    ├─ Get: last_updated timestamp (file mtime)
+    └─ Build: docs[] array
+        │
+        ▼ Output: docs[] metadata
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 6. WRITE INDEX.YAML                                            │
+└─────────────────────────────────────────────────────────────────┘
+  Write: .spec-drive/index.yaml
+    │
+    ├─ meta: {generated, version, project_name}
+    ├─ components: [] (from code analysis)
+    ├─ specs: [with traces]
+    ├─ docs: [with metadata]
+    └─ code: [with spec mappings]
+
+✅ index.yaml generated (<5 seconds)
+```
+
+### 7.4 Data Flow: Quality Gate Execution
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    QUALITY GATE CHECK FLOW                       │
+└──────────────────────────────────────────────────────────────────┘
+
+Workflow requests stage advancement
+  │
+  ▼
+scripts/gates/gate-N-stage.sh SPEC-ID
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ GATE CHECKS (example: gate-3-verify.sh)                        │
+└─────────────────────────────────────────────────────────────────┘
+  │
+  ├─ CHECK 1: Run tests
+  │    │
+  │    └─ Execute: npm test
+  │         │
+  │         ├─ Exit 0 → PASS ✅
+  │         └─ Exit non-zero → FAIL ❌
+  │
+  ├─ CHECK 2: @spec tags in src/
+  │    │
+  │    └─ Execute: grep -r "@spec $SPEC_ID" src/
+  │         │
+  │         ├─ Matches found → PASS ✅
+  │         └─ No matches → FAIL ❌
+  │
+  ├─ CHECK 3: @spec tags in tests/
+  │    │
+  │    └─ Execute: grep -r "@spec $SPEC_ID" tests/
+  │         │
+  │         ├─ Matches found → PASS ✅
+  │         └─ No matches → FAIL ❌
+  │
+  └─ CHECK 4: Lint clean
+       │
+       └─ Execute: npm run lint
+            │
+            ├─ Exit 0 → PASS ✅
+            └─ Exit non-zero → FAIL ❌
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ GATE RESULT                                                     │
+└─────────────────────────────────────────────────────────────────┘
+  │
+  ├─ ALL CHECKS PASS:
+  │    │
+  │    ├─ Update state.yaml: can_advance = true
+  │    └─ Exit 0
+  │
+  └─ ANY CHECK FAILS:
+       │
+       ├─ Update state.yaml: can_advance = false
+       ├─ Echo error message
+       └─ Exit 1
+  │
+  ▼
+Behavior agent reads state.yaml
+  │
+  ├─ can_advance = true → Allow stage advancement
+  └─ can_advance = false → Block stage advancement (stop-the-line)
+```
 
 ---
 
@@ -753,11 +1822,12 @@ specs:
 
 | Version | Date       | Author | Changes                          |
 |---------|------------|--------|----------------------------------|
-| 1.0     | 2025-11-01 | Team   | Initial TDD - Architecture Overview (Section 1) |
+| 1.0     | 2025-11-01 | Team   | Initial TDD - Architecture Overview (Sections 1-5) |
+| 1.1     | 2025-11-01 | Team   | Added Component Breakdown & Data Flows (Sections 6-7) |
 
 ---
 
-**Document Status:** Section 1 Complete (Architecture Overview)
-**Next Steps:** Complete Sections 2-3 (Component Breakdown, Data Flows, Integration Points)
+**Document Status:** Sections 1-7 Complete (Architecture, Components, Data Flows)
+**Next Steps:** Complete Sections 8-10 (Integration Points, Implementation Details, Quality Attributes)
 **Maintained By:** Core Team
 **Last Review:** 2025-11-01
