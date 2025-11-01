@@ -665,11 +665,25 @@ test -f docs/10-architecture/ARCHITECTURE.md
 
 ### Task 2.4: app-new Workflow - Command Integration
 
-**Files:** `scripts/commands/spec-drive-app-new.sh`
+**Files:**
+- `commands/app-new.md` (Claude Code command - markdown with frontmatter)
+- `scripts/workflows/app-new/run.sh` (bash orchestrator)
 
 **Description:** Create `/spec-drive:app-new` command that orchestrates planning + docs.
 
-**Command Flow:**
+**commands/app-new.md Structure:**
+```yaml
+---
+name: app-new
+description: Initialize new project with planning session and documentation
+arguments: [project-name]
+argument-hint: "[project-name]"
+---
+```
+
+Body calls bash script: `!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/app-new/run.sh $ARGUMENTS`
+
+**run.sh Flow:**
 1. Check: No active workflow (state.current_workflow = null)
 2. Run: planning-session.sh (creates APP-001)
 3. Run: generate-docs.sh (creates docs/)
@@ -677,22 +691,26 @@ test -f docs/10-architecture/ARCHITECTURE.md
 5. Print: Next steps (run /spec-drive:feature to start building)
 
 **Acceptance Criteria:**
-- [ ] Command checks prerequisites (no active workflow)
-- [ ] Command orchestrates planning + docs generation
-- [ ] Command updates state correctly
-- [ ] Command prints clear next steps
-- [ ] Command handles errors gracefully (rollback on failure)
-- [ ] Command respects --dry-run flag (preview without writing)
+- [ ] commands/app-new.md created with valid frontmatter
+- [ ] Command calls run.sh with ${CLAUDE_PLUGIN_ROOT}
+- [ ] run.sh checks prerequisites (no active workflow)
+- [ ] run.sh orchestrates planning + docs generation
+- [ ] run.sh updates state correctly
+- [ ] run.sh prints clear next steps
+- [ ] run.sh handles errors gracefully (rollback on failure)
 
 **Dependencies:** Tasks 2.2, 2.3
 
 **Verification:**
 ```bash
-# Test end-to-end app-new
-./spec-drive-app-new.sh --project-name "test-app"
+# Test run.sh directly
+CLAUDE_PLUGIN_ROOT=/root/spec-drive-plugin ./scripts/workflows/app-new/run.sh test-app
 test -f .spec-drive/specs/APP-001.yaml
 test -d docs/
 yq eval '.current_spec' .spec-drive/state.yaml  # APP-001
+
+# Test command (requires Claude Code)
+# /spec-drive:app-new test-app
 ```
 
 ---
@@ -882,40 +900,60 @@ yq eval '.current_workflow' .spec-drive/state.yaml  # null
 
 ### Task 2.10: feature Workflow - Command Integration
 
-**Files:** `scripts/commands/spec-drive-feature.sh`
+**Files:**
+- `commands/feature.md` (Claude Code command - markdown with frontmatter)
+- `scripts/workflows/feature/run.sh` (bash orchestrator)
 
 **Description:** Create `/spec-drive:feature` command that orchestrates 4-stage workflow.
 
-**Command Modes:**
-1. **Start** - `./spec-drive-feature.sh --start --title "Feature name"`
+**commands/feature.md Structure:**
+```yaml
+---
+name: feature
+description: Manage feature development workflow (discover → specify → implement → verify)
+arguments: [action, ...args]
+argument-hint: "start|advance|status|abandon [SPEC-ID] [options]"
+---
+```
+
+Body calls bash script: `!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh $ARGUMENTS`
+
+**run.sh Modes:**
+1. **Start** - `./run.sh start --title "Feature name"`
    - Runs discover stage, creates spec
-2. **Advance** - `./spec-drive-feature.sh --advance`
+2. **Advance** - `./run.sh advance`
    - Moves to next stage (checks can_advance)
-3. **Status** - `./spec-drive-feature.sh --status`
+3. **Status** - `./run.sh status`
    - Prints current workflow state
-4. **Abandon** - `./spec-drive-feature.sh --abandon`
+4. **Abandon** - `./run.sh abandon`
    - Marks workflow abandoned, resets state
 
 **Acceptance Criteria:**
-- [ ] Command supports all 4 modes (start, advance, status, abandon)
-- [ ] Command delegates to appropriate stage scripts
-- [ ] Command checks prerequisites (e.g., no active workflow for --start)
-- [ ] Command enforces can_advance flag (blocks --advance if false)
-- [ ] Command prints clear error messages and next steps
-- [ ] Command integrates with workflow engine (state management)
+- [ ] commands/feature.md created with valid frontmatter
+- [ ] Command calls run.sh with ${CLAUDE_PLUGIN_ROOT}
+- [ ] run.sh supports all 4 modes (start, advance, status, abandon)
+- [ ] run.sh delegates to appropriate stage scripts
+- [ ] run.sh checks prerequisites (e.g., no active workflow for start)
+- [ ] run.sh enforces can_advance flag (blocks advance if false)
+- [ ] run.sh prints clear error messages and next steps
+- [ ] run.sh integrates with workflow engine (state management)
 
 **Dependencies:** Tasks 2.6-2.9 (all stages)
 
 **Verification:**
 ```bash
-# Test end-to-end feature workflow
-./spec-drive-feature.sh --start --title "User auth"
-./spec-drive-feature.sh --advance  # discover → specify
-./spec-drive-feature.sh --advance  # specify → implement
+# Test run.sh directly
+CLAUDE_PLUGIN_ROOT=/root/spec-drive-plugin ./scripts/workflows/feature/run.sh start --title "User auth"
+./scripts/workflows/feature/run.sh advance  # discover → specify
+./scripts/workflows/feature/run.sh advance  # specify → implement
 # (implement code + tests)
-./spec-drive-feature.sh --advance  # implement → verify
-./spec-drive-feature.sh --advance  # verify → done
+./scripts/workflows/feature/run.sh advance  # implement → verify
+./scripts/workflows/feature/run.sh advance  # verify → done
 yq eval '.workflows.AUTH-001.status' .spec-drive/state.yaml  # done
+
+# Test command (requires Claude Code)
+# /spec-drive:feature start --title "User auth"
+# /spec-drive:feature advance
 ```
 
 ---
