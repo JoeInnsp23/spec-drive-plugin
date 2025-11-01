@@ -14,7 +14,7 @@ Detects project type and runs appropriate initialization:
 
 ## Running Initialization
 
-!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/init.sh`
+!bash ${CLAUDE_PLUGIN_ROOT}/scripts/init.sh
 
 ## Next Steps
 
