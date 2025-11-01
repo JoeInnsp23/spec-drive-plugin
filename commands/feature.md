@@ -1,5 +1,5 @@
 ---
-name: feature
+name: spec-drive:feature
 description: Start or advance feature development workflow (4-stage process)
 allowed-tools: "*"
 argument_hint: "[start|advance|status] [SPEC-ID]"

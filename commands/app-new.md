@@ -1,5 +1,5 @@
 ---
-name: app-new
+name: spec-drive:app-new
 description: Initialize new project with planning session and documentation
 allowed-tools: "*"
 argument_hint: "[project-name]"

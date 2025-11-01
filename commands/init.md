@@ -1,5 +1,5 @@
 ---
-name: init
+name: spec-drive:init
 description: Initialize spec-drive in project (new or existing)
 allowed-tools: "*"
 ---
