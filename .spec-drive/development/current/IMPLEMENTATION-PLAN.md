@@ -205,14 +205,14 @@ done
 │       ├── index-schema.json
 │       ├── config-schema.json
 │       └── state-schema.json
-└── assets/
-    ├── strict-concise-behavior.md
-    └── workflows/
-        ├── app-new.yaml
-        ├── feature.yaml
-        ├── bugfix.yaml
-        └── research.yaml
+└── development/
+    ├── current/
+    ├── planned/
+    ├── completed/
+    └── archive/
 ```
+
+**Note:** `assets/` folder is at plugin root level, not in `.spec-drive/`
 
 **Acceptance Criteria:**
 - [ ] Script creates all directories if they don't exist
@@ -442,9 +442,78 @@ ajv validate -s .spec-drive/schemas/v0.1/index-schema.json \
 
 ---
 
+### Task 1.8: Hook System - SessionStart (Behavior Injection)
+
+**Files:**
+- `hooks/hooks.json`
+- `hooks-handlers/session-start.sh`
+- `assets/strict-concise-behavior.md`
+
+**Description:** Implement SessionStart hook for automatic behavior prompt injection following the `explanatory-output-style` plugin pattern.
+
+**hooks/hooks.json Structure:**
+```json
+{
+  "hooks": {
+    "SessionStart": [{
+      "hooks": [{
+        "type": "command",
+        "command": "${CLAUDE_PLUGIN_ROOT}/hooks-handlers/session-start.sh"
+      }]
+    }]
+  }
+}
+```
+
+**hooks-handlers/session-start.sh Logic:**
+```bash
+#!/bin/bash
+BEHAVIOR_FILE="${CLAUDE_PLUGIN_ROOT}/assets/strict-concise-behavior.md"
+BEHAVIOR_CONTENT=$(cat "$BEHAVIOR_FILE")
+
+cat << EOF
+{
+  "hookEventName": "SessionStart",
+  "additionalContext": $(echo "$BEHAVIOR_CONTENT" | jq -Rs .)
+}
+EOF
+```
+
+**assets/strict-concise-behavior.md Content:**
+- Strict-concise v3.0 behavior prompt
+- Quality gates enforcement
+- Extreme planning requirements
+- Docs-first enforcement
+- Zero shortcuts policy
+
+**Acceptance Criteria:**
+- [ ] `hooks/hooks.json` created with SessionStart configuration
+- [ ] `hooks-handlers/session-start.sh` created and executable
+- [ ] `assets/strict-concise-behavior.md` created with full behavior prompt
+- [ ] Hook returns valid JSON format
+- [ ] Hook execution completes <100ms
+- [ ] Behavior prompt loads into Claude Code sessions automatically
+- [ ] Test: Start new session, verify behavior active
+
+**Dependencies:** None (foundation component)
+
+**Verification:**
+```bash
+# Test hook script directly
+./hooks-handlers/session-start.sh | jq '.'  # Valid JSON
+
+# Test hook execution time
+time ./hooks-handlers/session-start.sh  # <100ms
+
+# Test in Claude Code session (manual)
+# Start session, check if behavior instructions active
+```
+
+---
+
 ### Phase 1 Exit Criteria
 
-**All tasks 1.1-1.7 complete:**
+**All tasks 1.1-1.8 complete:**
 - [ ] Template rendering system working
 - [ ] 12 documentation templates created and validated
 - [ ] Directory scaffolding scripts (init-directories.sh, init-docs.sh) working
