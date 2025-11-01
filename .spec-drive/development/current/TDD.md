@@ -1782,19 +1782,1152 @@ Behavior agent reads state.yaml
 
 ## 8. INTEGRATION POINTS
 
-*(To be completed in Step 3 - TDD Integration Points)*
+### 8.1 Claude Code Plugin Environment
+
+**Integration Surface:**
+
+spec-drive operates within the Claude Code CLI plugin ecosystem, requiring tight integration with several Claude Code subsystems.
+
+#### 8.1.1 Hook System Integration
+
+**SessionStart Hook:**
+
+```yaml
+Trigger: Claude Code session initialization
+Handler: spec-drive/hooks/handlers/session-start.sh
+Timing: Before first user interaction
+Contract:
+  - Output: Markdown content (behavior prompt) to stdout
+  - Exit code: 0 (success), 1 (failure - stops session)
+  - Side effects: None (stateless)
+  - Timeout: <500ms (Claude Code enforced)
+
+Integration Requirements:
+  - Hook handler must be executable (chmod +x)
+  - Must handle missing behavior file gracefully
+  - Output must be valid markdown
+  - No interactive prompts allowed
+```
+
+**PostToolUse Hook:**
+
+```yaml
+Trigger: After every Claude tool invocation
+Handler: spec-drive/hooks/handlers/post-tool-use.sh
+Timing: Immediately after tool execution
+Input:
+  $1: Tool name (Edit, Write, Read, Bash, etc.)
+  $2: Tool arguments (JSON string)
+Contract:
+  - Output: None (silent operation)
+  - Exit code: Ignored (failures are logged but don't block)
+  - Side effects: Updates .spec-drive/state.yaml (dirty flag)
+  - Timeout: <100ms (performance critical)
+
+Integration Requirements:
+  - Handler must be idempotent (safe to retry)
+  - Must handle missing state.yaml (project not initialized)
+  - No output to stdout/stderr (would pollute Claude responses)
+  - Minimal processing (performance sensitive)
+```
+
+**Registration:**
+
+```json
+// spec-drive/hooks/hooks.json
+{
+  "hooks": {
+    "SessionStart": {
+      "handler": "spec-drive/hooks/handlers/session-start.sh",
+      "description": "Inject strict-concise behavior",
+      "version": "0.1.0"
+    },
+    "PostToolUse": {
+      "handler": "spec-drive/hooks/handlers/post-tool-use.sh",
+      "description": "Track tool usage for autodocs",
+      "version": "0.1.0"
+    }
+  }
+}
+```
+
+#### 8.1.2 Slash Command Integration
+
+**Command Discovery:**
+
+```yaml
+Location: spec-drive/commands/*.md
+Discovery: Claude Code scans commands/ at startup
+Naming: /spec-drive:command-name maps to commands/command-name.md
+Contract:
+  - File format: Markdown
+  - First line: # /spec-drive:command-name [args]
+  - Content: Prompt for Claude Code to execute
+  - Parameters: Specified in markdown, parsed by Claude
+
+Integration Requirements:
+  - Commands must be valid markdown
+  - Parameter syntax must match Claude Code conventions
+  - No executable code in command files (prompt only)
+```
+
+**Example:**
+
+```markdown
+# /spec-drive:feature [SPEC-ID] [title]
+
+You are starting the feature workflow.
+Arguments:
+- SPEC-ID: Feature identifier (e.g., AUTH-001)
+- title: Brief description
+
+[... rest of prompt ...]
+```
+
+---
+
+### 8.2 File System Integration
+
+#### 8.2.1 Directory Structure Requirements
+
+**Project Root Detection:**
+
+```bash
+# spec-drive initializes relative to detected project root
+# Detection strategy:
+1. Check for .git/ directory (git repository)
+2. Check for package.json (Node project)
+3. Check for pyproject.toml (Python project)
+4. Fallback: Current working directory
+```
+
+**File System Permissions:**
+
+```yaml
+Required Permissions:
+  - Read: All project files (for code analysis)
+  - Write: .spec-drive/*, docs/* (for docs generation)
+  - Execute: scripts/*.sh (for workflow orchestration)
+
+Directory Creation:
+  - .spec-drive/ (hidden folder)
+  - .spec-drive/specs/
+  - .spec-drive/schemas/v0.1/
+  - .spec-drive/development/current/
+  - docs/ (and subdirectories)
+
+File Watching:
+  - Not implemented in v0.1 (no filesystem watchers)
+  - Changes detected via PostToolUse hook only
+```
+
+#### 8.2.2 Gitignore Integration
+
+**Auto-generated .gitignore rules:**
+
+```bash
+# Added to project .gitignore on init
+.spec-drive/state.yaml       # Runtime state (ephemeral)
+.spec-drive/index.yaml        # Regenerable index
+
+# Tracked in git:
+.spec-drive/config.yaml       # Configuration
+.spec-drive/specs/*.yaml      # Spec files
+.spec-drive/schemas/          # JSON Schemas
+.spec-drive/development/      # Planning docs
+docs/                         # Product documentation
+```
+
+---
+
+### 8.3 Git Integration
+
+#### 8.3.1 Git Commands Used
+
+spec-drive uses git for project detection and context gathering but does NOT automate git operations.
+
+**Git Commands (Read-Only):**
+
+```bash
+# Project detection
+git rev-parse --show-toplevel    # Find git root
+git status --porcelain           # Check for uncommitted changes
+
+# Context gathering
+git log --oneline -10            # Recent commits
+git branch --show-current        # Current branch
+```
+
+**Git Commands (NOT USED):**
+
+```yaml
+Avoid in v0.1:
+  - git add / git commit (user controlled)
+  - git push / git pull (user controlled)
+  - git merge / git rebase (too risky)
+
+Rationale:
+  - Behavior agent handles atomic commits (manual, not automated)
+  - spec-drive provides structure, not automation
+```
+
+#### 8.3.2 Git Workflow Integration
+
+**Workflow + Git Pattern:**
+
+```
+User Development Flow:
+1. /spec-drive:feature AUTH-001 → Creates spec, starts workflow
+2. User develops code + tests (with @spec tags)
+3. Gate-3 runs → Tests pass, tags verified
+4. User reviews autodocs updates
+5. User commits: git add . && git commit -m "..."
+6. Gate-4 verifies commit includes docs
+```
+
+---
+
+### 8.4 External Tool Dependencies
+
+spec-drive depends on several CLI tools that must be available in PATH.
+
+#### 8.4.1 Required Tools
+
+**Core Dependencies:**
+
+| Tool       | Version      | Purpose                        | Fallback                     |
+|------------|--------------|--------------------------------|------------------------------|
+| bash       | ≥4.0         | Script execution               | None (hard requirement)      |
+| node       | ≥18.0        | Autodocs tools (JS scripts)    | None (hard requirement)      |
+| npm        | ≥9.0         | Test/lint commands (generic)   | Detect from config           |
+| yq         | ≥4.0         | YAML processing                | Bundled yq binary            |
+| grep       | GNU or BSD   | @spec tag detection            | None (standard on all OS)    |
+| find       | GNU or BSD   | File discovery                 | None (standard on all OS)    |
+
+**Optional Tools (Generic Profile):**
+
+| Tool       | Purpose                        | Graceful Degradation          |
+|------------|--------------------------------|-------------------------------|
+| git        | Project detection, context     | Skip git features             |
+| tree       | Directory visualization        | Use `ls -R` fallback          |
+
+#### 8.4.2 Tool Detection Strategy
+
+**Pre-flight Check (on init):**
+
+```bash
+#!/bin/bash
+# scripts/tools/check-dependencies.sh
+
+check_dependency() {
+  local tool=$1
+  local min_version=$2
+
+  if ! command -v "$tool" &> /dev/null; then
+    echo "❌ Required tool not found: $tool"
+    return 1
+  fi
+
+  # Version check logic here
+  echo "✅ $tool found"
+  return 0
+}
+
+check_dependency "bash" "4.0"
+check_dependency "node" "18.0"
+check_dependency "yq" "4.0"
+# ... etc
+```
+
+#### 8.4.3 yq Integration
+
+**YAML Processing Strategy:**
+
+```yaml
+Primary: Use yq for all YAML operations
+Rationale: JSON doesn't support comments, YAML is human-friendly
+
+Operations:
+  - Read: yq eval '.path.to.key' file.yaml
+  - Write: yq eval '.path.to.key = "value"' -i file.yaml
+  - Query: yq eval '.specs[] | select(.id == "AUTH-001")' index.yaml
+
+Bundling Strategy:
+  - Include yq binary in plugin (Linux x64, macOS arm64/x64)
+  - Detect system yq first
+  - Fallback to bundled binary if not found
+```
+
+---
+
+### 8.5 npm/Test Runner Integration
+
+**Generic Profile Assumptions:**
+
+```yaml
+Test Command: npm test
+  - Expects: package.json with "scripts": {"test": "..."}
+  - Fallback: Skip test gate if npm not found
+
+Lint Command: npm run lint
+  - Expects: package.json with "scripts": {"lint": "..."}
+  - Fallback: Skip lint gate if command not found
+
+Typecheck: npx tsc --noEmit (if TypeScript detected)
+  - Detection: tsconfig.json exists
+  - Fallback: Skip typecheck if not TypeScript project
+```
+
+**Error Handling:**
+
+```bash
+# In gate-3-verify.sh
+if command -v npm &> /dev/null; then
+  npm test || { echo "❌ Tests failed"; exit 1; }
+else
+  echo "⚠️  npm not found, skipping tests"
+  # Gate still passes (warn-only in generic profile)
+fi
+```
+
+---
+
+### 8.6 Cross-Platform Integration
+
+#### 8.6.1 Linux vs macOS Differences
+
+**Path Separators:**
+
+```bash
+# Always use forward slashes (works on both)
+SPEC_PATH=".spec-drive/specs/AUTH-001.yaml"  # ✅
+# NOT: SPEC_PATH=".spec-drive\specs\AUTH-001.yaml"  # ❌
+```
+
+**grep Differences:**
+
+```bash
+# GNU grep (Linux) vs BSD grep (macOS)
+# Use compatible flags only:
+grep -r "pattern" dir/         # ✅ Works on both
+grep -P "regex" file           # ❌ -P not on macOS
+
+# Workaround for extended regex:
+grep -E "regex" file           # ✅ Extended regex (both)
+```
+
+**find Differences:**
+
+```bash
+# GNU find vs BSD find
+# Use POSIX-compatible syntax:
+find src/ -name "*.ts"         # ✅ Works on both
+find src/ -type f -exec ...    # ✅ Works on both
+```
+
+#### 8.6.2 Platform Detection
+
+```bash
+#!/bin/bash
+# Detect platform for platform-specific logic
+
+OS="$(uname -s)"
+case "$OS" in
+  Linux*)   PLATFORM="linux" ;;
+  Darwin*)  PLATFORM="macos" ;;
+  *)        PLATFORM="unknown" ;;
+esac
+
+# Use bundled yq binary for platform
+YQ_BINARY="spec-drive/bin/yq-$PLATFORM"
+```
+
+---
+
+### 8.7 Configuration File Integration
+
+#### 8.7.1 config.yaml Structure
+
+```yaml
+# .spec-drive/config.yaml
+
+project:
+  name: "my-app"
+  version: "0.1.0"
+  stack_profile: "generic"  # v0.1 only supports generic
+
+behavior:
+  mode: "strict-concise"
+  gates_enabled: true
+  auto_commit: false        # User commits manually
+
+autodocs:
+  enabled: true
+  update_frequency: "stage-boundary"
+  preserve_manual_sections: true
+
+workflows:
+  enabled: ["app-new", "feature"]
+
+tools:
+  test_command: "npm test"
+  lint_command: "npm run lint"
+  typecheck_command: "npx tsc --noEmit"
+```
+
+#### 8.7.2 Configuration Defaults
+
+```javascript
+// scripts/tools/init-config.js
+const DEFAULT_CONFIG = {
+  project: {
+    name: detectProjectName(),  // From package.json or git remote
+    version: "0.1.0",
+    stack_profile: "generic"
+  },
+  behavior: {
+    mode: "strict-concise",
+    gates_enabled: true,
+    auto_commit: false
+  },
+  autodocs: {
+    enabled: true,
+    update_frequency: "stage-boundary",
+    preserve_manual_sections: true
+  },
+  workflows: {
+    enabled: ["app-new", "feature"]
+  },
+  tools: {
+    test_command: detectTestCommand(),    // Try: npm test, pnpm test, yarn test
+    lint_command: detectLintCommand(),    // Try: npm run lint, eslint, etc.
+    typecheck_command: detectTypecheckCommand()  // Try: tsc, mypy, etc.
+  }
+};
+```
 
 ---
 
 ## 9. IMPLEMENTATION DETAILS
 
-*(To be completed in Step 3 - TDD Implementation Details)*
+### 9.1 Error Handling Strategy
+
+#### 9.1.1 Error Categories
+
+**Category 1: Fatal Errors (Stop Execution)**
+
+```yaml
+Scenarios:
+  - Missing required tools (bash, node)
+  - Corrupted state.yaml (invalid YAML)
+  - Permission errors (cannot write to .spec-drive/)
+  - Hook execution timeout (>500ms)
+
+Response:
+  - Log error to stderr
+  - Exit with non-zero code
+  - Display clear error message to user
+  - Suggest remediation steps
+
+Example:
+  "❌ ERROR: node not found. Please install Node.js ≥18.0"
+  "❌ ERROR: Cannot write to .spec-drive/. Check permissions."
+```
+
+**Category 2: Recoverable Errors (Warn and Continue)**
+
+```yaml
+Scenarios:
+  - Optional tool missing (git, tree)
+  - Test command not configured
+  - Lint command fails (warn but don't block)
+
+Response:
+  - Log warning to stderr
+  - Continue execution with degraded functionality
+  - Update state to indicate partial completion
+
+Example:
+  "⚠️  WARNING: git not found. Skipping git integration."
+  "⚠️  WARNING: npm test failed. Review manually before advancing."
+```
+
+**Category 3: Validation Errors (Gate Failures)**
+
+```yaml
+Scenarios:
+  - Spec incomplete ([NEEDS CLARIFICATION] markers)
+  - Tests failing (gate-3)
+  - @spec tags missing (gate-3)
+  - Docs not updated (gate-4)
+
+Response:
+  - Set can_advance: false in state.yaml
+  - Display specific failure reason
+  - Suggest remediation steps
+  - Block stage advancement (behavior agent enforces)
+
+Example:
+  "❌ Gate 3 FAILED: No @spec AUTH-001 tags found in tests/"
+  "Remediation: Add /** @spec AUTH-001 */ tags to test files"
+```
+
+#### 9.1.2 Error Logging
+
+**Log Locations:**
+
+```yaml
+Session Logs: .spec-drive/logs/session-{timestamp}.log
+Gate Logs: .spec-drive/logs/gate-{gate-number}-{timestamp}.log
+Autodocs Logs: .spec-drive/logs/autodocs-{timestamp}.log
+
+Log Format:
+  [2025-11-01T10:30:00Z] [ERROR] gate-3-verify.sh: Tests failed
+  [2025-11-01T10:30:01Z] [WARN] post-tool-use.sh: state.yaml not found
+  [2025-11-01T10:30:02Z] [INFO] index-docs.js: Generated index.yaml
+```
+
+**Log Rotation:**
+
+```bash
+# Keep last 10 session logs, delete older
+find .spec-drive/logs/ -name "session-*.log" -mtime +7 -delete
+```
+
+#### 9.1.3 Rollback Mechanisms
+
+**Spec-driven supports rollback for destructive operations:**
+
+**Operation: Existing Project Init (Archive Docs)**
+
+```bash
+# Before: docs/ exists
+# Action: Move docs/ → docs-archive-{timestamp}/
+# Rollback:
+mv docs-archive-2025-11-01T10-30-00Z docs/
+rm -rf .spec-drive/  # Remove newly created structure
+```
+
+**Operation: State Update**
+
+```bash
+# Backup state.yaml before major changes
+cp .spec-drive/state.yaml .spec-drive/state.yaml.bak
+
+# On error:
+mv .spec-drive/state.yaml.bak .spec-drive/state.yaml
+```
+
+---
+
+### 9.2 Configuration Defaults
+
+#### 9.2.1 Sensible Defaults Philosophy
+
+```yaml
+Principle: Zero-config initialization
+  - Detect project type (Node.js, Python, etc.)
+  - Infer test/lint/typecheck commands
+  - Use generic profile if detection fails
+  - User can override in config.yaml
+
+Example Detection:
+  package.json exists → Node.js project
+    → test_command: "npm test"
+    → lint_command: "npm run lint"
+
+  pyproject.toml exists → Python project
+    → test_command: "pytest"
+    → lint_command: "flake8"
+
+  No detection → Generic
+    → test_command: "echo 'No tests configured'"
+    → lint_command: "echo 'No linting configured'"
+```
+
+#### 9.2.2 Default State Structure
+
+```yaml
+# .spec-drive/state.yaml (initial state)
+current_workflow: null
+current_spec: null
+current_stage: null
+can_advance: false
+dirty: false
+
+workflows: {}
+
+meta:
+  initialized: "2025-11-01T10:30:00Z"
+  last_gate_run: null
+  last_autodocs_run: null
+```
+
+#### 9.2.3 Default Index Structure
+
+```yaml
+# .spec-drive/index.yaml (empty state)
+meta:
+  generated: "2025-11-01T10:30:00Z"
+  version: "0.1.0"
+  project_name: "my-app"
+
+components: []
+specs: []
+docs: []
+code: []
+```
+
+---
+
+### 9.3 Platform-Specific Considerations
+
+#### 9.3.1 Linux Implementation
+
+**File Permissions:**
+
+```bash
+# Ensure scripts are executable
+chmod +x spec-drive/hooks/handlers/*.sh
+chmod +x spec-drive/scripts/**/*.sh
+
+# Set umask for created files
+umask 022  # rw-r--r-- for files, rwxr-xr-x for dirs
+```
+
+**Tool Paths:**
+
+```bash
+# Linux typically has tools in /usr/bin or /usr/local/bin
+NODE=/usr/bin/node
+YQ=/usr/local/bin/yq
+```
+
+#### 9.3.2 macOS Implementation
+
+**Case Sensitivity:**
+
+```yaml
+Issue: macOS file system is case-insensitive by default
+Impact: AUTH-001.yaml and auth-001.yaml treated as same file
+Solution:
+  - Use consistent casing (uppercase SPEC-IDs)
+  - Document case sensitivity requirement
+  - Validate spec IDs match [A-Z0-9-]+ pattern
+```
+
+**Bundled Binary Signing:**
+
+```yaml
+Issue: macOS Gatekeeper blocks unsigned binaries
+Impact: Bundled yq binary may not execute
+Solution:
+  - Sign yq binary with Apple Developer ID (future)
+  - Detect system yq first (preferred)
+  - Warn user to allow bundled binary in Security settings
+```
+
+#### 9.3.3 Windows Support (Future)
+
+```yaml
+Status: Optional for v0.1, planned for v0.2
+
+Challenges:
+  - Bash not native (WSL or Git Bash required)
+  - Path separators (backslash vs forward slash)
+  - Line endings (CRLF vs LF)
+  - Case sensitivity (always case-insensitive)
+
+Approach (v0.2):
+  - Detect WSL vs Git Bash
+  - Convert paths to Windows format
+  - Use Node.js scripts instead of bash where possible
+```
+
+---
+
+### 9.4 Performance Optimization
+
+#### 9.4.1 Hook Performance
+
+**SessionStart Optimization:**
+
+```bash
+# Goal: <100ms execution time
+# Strategy: Minimal processing, cat file only
+
+#!/bin/bash
+# hooks/handlers/session-start.sh
+cat spec-drive/assets/strict-concise-behavior.md
+
+# NO heavy operations:
+# - No database queries
+# - No network requests
+# - No file scanning
+# - No complex parsing
+```
+
+**PostToolUse Optimization:**
+
+```bash
+# Goal: <50ms execution time
+# Strategy: Update YAML flag only, no analysis
+
+#!/bin/bash
+TOOL_NAME=$1
+
+# Quick regex check (no parsing tool args)
+if [[ "$TOOL_NAME" =~ ^(Edit|Write|NotebookEdit)$ ]]; then
+  yq eval '.dirty = true' -i .spec-drive/state.yaml &
+  # Run in background to avoid blocking
+fi
+```
+
+#### 9.4.2 Index Generation Optimization
+
+**Incremental Updates:**
+
+```javascript
+// scripts/tools/index-docs.js
+// Only scan changed files, not entire codebase
+
+async function buildIndex(projectRoot, incrementalMode = true) {
+  if (incrementalMode && existingIndexExists()) {
+    const existingIndex = loadExistingIndex();
+    const changedFiles = getChangedFilesSinceLastRun();
+
+    // Update only changed files
+    for (const file of changedFiles) {
+      updateIndexForFile(existingIndex, file);
+    }
+
+    return existingIndex;
+  }
+
+  // Full regeneration (initial run or explicit rebuild)
+  return fullIndexGeneration(projectRoot);
+}
+```
+
+#### 9.4.3 Doc Regeneration Optimization
+
+**Selective Regeneration:**
+
+```javascript
+// scripts/tools/update-docs.js
+// Only regenerate affected docs, not all docs
+
+async function updateDocs(projectRoot) {
+  const index = loadIndex();
+  const dirtySpecs = getDirtySpecs(index);  // Changed since last run
+
+  for (const spec of dirtySpecs) {
+    // Regenerate feature page for this spec only
+    regenerateFeaturePage(spec, projectRoot);
+  }
+
+  // Regenerate catalog only if components changed
+  if (componentsChanged(index)) {
+    regenerateComponentCatalog(index.components, projectRoot);
+  }
+}
+```
 
 ---
 
 ## 10. QUALITY ATTRIBUTES
 
-*(To be completed in Step 3 - TDD Quality Attributes)*
+### 10.1 Performance
+
+#### 10.1.1 Performance Targets
+
+| Operation                  | Target Time      | Rationale                                    |
+|----------------------------|------------------|----------------------------------------------|
+| SessionStart hook          | <100ms           | User session start delay must be imperceptible |
+| PostToolUse hook           | <50ms            | Runs after every tool, cannot slow workflow  |
+| Index generation (10k LOC) | <5 seconds       | Initial project scan, one-time cost          |
+| Index incremental update   | <1 second        | Frequent operation, must be fast             |
+| Doc regeneration (1 spec)  | <3 seconds       | Per-feature cost, acceptable for stage boundary |
+| Gate check (gate-1, gate-2)| <500ms           | YAML validation only, should be instant      |
+| Gate check (gate-3)        | <10 seconds      | Depends on test suite, acceptable delay      |
+| Gate check (gate-4)        | <1 second        | Final verification, grep + YAML checks       |
+| Full workflow (app-new)    | <60 seconds      | Initial project setup, one-time cost         |
+| Full workflow (feature)    | Varies           | User-driven, no enforced time limit          |
+
+#### 10.1.2 Performance Monitoring
+
+**Instrumentation:**
+
+```bash
+# Add timing to all scripts
+#!/bin/bash
+START_TIME=$(date +%s%N)
+
+# ... script logic ...
+
+END_TIME=$(date +%s%N)
+ELAPSED=$((($END_TIME - $START_TIME) / 1000000))  # Convert to ms
+echo "[PERF] Script completed in ${ELAPSED}ms" >> .spec-drive/logs/perf.log
+```
+
+**Performance Degradation Alerts:**
+
+```bash
+# If any operation exceeds 2x target time, log warning
+if [ $ELAPSED -gt $(($TARGET_TIME * 2)) ]; then
+  echo "⚠️  Performance degradation: ${SCRIPT_NAME} took ${ELAPSED}ms (target: ${TARGET_TIME}ms)"
+fi
+```
+
+---
+
+### 10.2 Reliability
+
+#### 10.2.1 Reliability Requirements
+
+**Uptime:**
+
+```yaml
+Target: 99.9% (no crashes during normal operation)
+
+Failure Modes:
+  - Hook crashes → Claude Code session continues (hooks are optional)
+  - Gate script fails → Workflow blocked (intentional safety)
+  - Autodocs fails → Docs outdated but workflow continues
+
+Recovery Strategy:
+  - All operations are idempotent (safe to retry)
+  - State stored in YAML (human-readable, recoverable)
+  - No data loss on failure (state.yaml is atomic write)
+```
+
+**Data Integrity:**
+
+```yaml
+Critical Data:
+  - .spec-drive/specs/*.yaml (user's specs)
+  - .spec-drive/config.yaml (user's configuration)
+  - .spec-drive/development/ (planning docs)
+
+Protection:
+  - Never delete without archival (e.g., docs → docs-archive)
+  - Atomic writes (write to temp, then mv)
+  - Backup state.yaml before major operations
+  - Git tracks all critical data (recovery via git)
+```
+
+#### 10.2.2 Fault Tolerance
+
+**Graceful Degradation:**
+
+```yaml
+Scenario 1: npm not found
+  - Response: Skip test/lint gates (warn user)
+  - Impact: Reduced quality enforcement
+  - Mitigation: User can add gates manually
+
+Scenario 2: yq not found and bundled yq fails
+  - Response: Fatal error, cannot proceed
+  - Impact: Cannot process YAML (core requirement)
+  - Mitigation: Clear error message, install instructions
+
+Scenario 3: git not found
+  - Response: Skip git integration features
+  - Impact: No git context in docs
+  - Mitigation: Still functional, just no git metadata
+```
+
+---
+
+### 10.3 Maintainability
+
+#### 10.3.1 Code Organization
+
+**Directory Structure:**
+
+```
+spec-drive/
+├── hooks/                  # Hook system (2 files)
+│   ├── hooks.json
+│   └── handlers/
+│       ├── session-start.sh
+│       └── post-tool-use.sh
+│
+├── commands/               # Slash commands (2 files)
+│   ├── app-new.md
+│   └── feature.md
+│
+├── scripts/
+│   ├── workflows/          # Workflow orchestrators (2 files)
+│   │   ├── app-new.sh
+│   │   └── feature.sh
+│   │
+│   ├── gates/              # Quality gates (4 files)
+│   │   ├── gate-1-specify.sh
+│   │   ├── gate-2-implement.sh
+│   │   ├── gate-3-verify.sh
+│   │   └── gate-4-done.sh
+│   │
+│   └── tools/              # Autodocs tools (7 files)
+│       ├── analyze-codebase.js
+│       ├── index-docs.js
+│       ├── update-docs.js
+│       ├── create-spec.sh
+│       ├── init-docs.sh
+│       ├── generate-index.sh
+│       └── validate-spec.sh
+│
+├── templates/              # Templates (11 files)
+│   ├── spec-template.yaml
+│   ├── index-template.yaml
+│   └── docs/
+│       ├── SYSTEM-OVERVIEW.md.template
+│       ├── GLOSSARY.md.template
+│       ├── ARCHITECTURE.md.template
+│       ├── COMPONENT-CATALOG.md.template
+│       ├── DATA-FLOWS.md.template
+│       ├── RUNTIME-DEPLOYMENT.md.template
+│       ├── BUILD-RELEASE.md.template
+│       ├── PRODUCT-BRIEF.md.template
+│       └── FEATURE-SPEC.md.template
+│
+├── assets/                 # Static assets (1 file)
+│   └── strict-concise-behavior.md
+│
+└── bin/                    # Bundled binaries (optional)
+    ├── yq-linux
+    └── yq-macos
+
+Total: ~30 files across 6 subsystems
+```
+
+**File Naming Conventions:**
+
+```yaml
+Bash Scripts: kebab-case.sh (e.g., init-docs.sh)
+JavaScript: camelCase.js (e.g., analyzeCodebase.js)
+Commands: kebab-case.md (e.g., app-new.md)
+Templates: UPPERCASE.md.template (e.g., ARCHITECTURE.md.template)
+YAML: lowercase-with-dashes.yaml (e.g., spec-template.yaml)
+```
+
+#### 10.3.2 Documentation Strategy
+
+**Code Documentation:**
+
+```bash
+# Every script includes:
+# 1. Purpose comment at top
+# 2. Input/output contract
+# 3. Example usage
+
+#!/bin/bash
+# gate-3-verify.sh
+# Purpose: Verify implementation complete (tests pass, @spec tags present)
+# Inputs: $1 = SPEC-ID
+# Outputs: Exit 0 (pass) or 1 (fail)
+# Example: scripts/gates/gate-3-verify.sh AUTH-001
+```
+
+**Architecture Documentation:**
+
+```yaml
+Sources of Truth:
+  - TDD.md (this document): Architecture, components, data flows
+  - DECISIONS.md: Key architectural decisions
+  - ADR-001 through ADR-007: Detailed decision rationale
+  - README.md: User-facing installation and usage
+
+Update Frequency:
+  - TDD: Updated per major architecture change
+  - DECISIONS: Updated when new decisions made
+  - ADRs: Immutable once accepted (new ADR for changes)
+  - README: Updated per user-facing feature
+```
+
+---
+
+### 10.4 Security
+
+#### 10.4.1 Security Considerations
+
+**Threat Model:**
+
+```yaml
+Threats NOT in scope (v0.1):
+  - Network attacks (no network access)
+  - Supply chain attacks (no external dependencies at runtime)
+  - Multi-user attacks (single-user CLI tool)
+
+Threats IN scope:
+  - Code injection via user input (SPEC-ID, file paths)
+  - Permission escalation (writing to system directories)
+  - Secret exposure (logging sensitive data)
+```
+
+**Mitigations:**
+
+**Input Validation:**
+
+```bash
+# Validate SPEC-ID format (must match [A-Z0-9-]+)
+validate_spec_id() {
+  local SPEC_ID=$1
+  if [[ ! "$SPEC_ID" =~ ^[A-Z0-9-]+$ ]]; then
+    echo "❌ Invalid SPEC-ID: $SPEC_ID (must match [A-Z0-9-]+)"
+    exit 1
+  fi
+}
+
+# Prevent path traversal
+validate_path() {
+  local PATH_ARG=$1
+  if [[ "$PATH_ARG" =~ \.\. ]]; then
+    echo "❌ Invalid path: $PATH_ARG (contains ..)"
+    exit 1
+  fi
+}
+```
+
+**Safe File Operations:**
+
+```bash
+# Never delete without confirmation
+rm_safe() {
+  local file=$1
+  echo "About to delete: $file"
+  read -p "Confirm (y/n)? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm "$file"
+  fi
+}
+
+# Never write to system directories
+ensure_project_scope() {
+  local target_dir=$1
+  if [[ "$target_dir" =~ ^(/|/usr|/etc|/var|/sys|/bin) ]]; then
+    echo "❌ Refusing to write to system directory: $target_dir"
+    exit 1
+  fi
+}
+```
+
+**Secret Exposure Prevention:**
+
+```bash
+# Never log file contents (may contain secrets)
+# Log file paths only
+echo "[INFO] Processing file: $FILE_PATH"  # ✅
+# NOT: echo "[INFO] File contents: $(cat $FILE_PATH)"  # ❌
+
+# Sanitize YAML output before logging
+yq eval '.specs' index.yaml  # ✅ Specific path
+# NOT: cat index.yaml  # ❌ May contain sensitive metadata
+```
+
+#### 10.4.2 Permission Model
+
+**Principle of Least Privilege:**
+
+```yaml
+File System Permissions:
+  - Read: Project files only (no /etc, /usr, /sys access)
+  - Write: .spec-drive/, docs/ only (no writes outside project)
+  - Execute: Plugin scripts only (no arbitrary code execution)
+
+Process Permissions:
+  - Run as user (not root)
+  - No sudo/privilege escalation
+  - No setuid binaries
+```
+
+**Sandboxing (Future v0.2):**
+
+```yaml
+Goal: Run all operations in restricted environment
+Approaches:
+  - Docker container (restrict file system access)
+  - chroot jail (Linux only)
+  - Filesystem permissions (chmod/chown)
+```
+
+---
+
+### 10.5 Testability
+
+#### 10.5.1 Testing Strategy
+
+**Unit Tests:**
+
+```yaml
+Target: 90% line coverage for critical paths
+Scope:
+  - Gate scripts (all 4 gates)
+  - Autodocs tools (index-docs.js, update-docs.js)
+  - Workflow orchestrators (app-new.sh, feature.sh)
+
+Framework: Jest (for JS), Bats (for Bash)
+Location: tests/unit/
+```
+
+**Integration Tests:**
+
+```yaml
+Target: 100% workflow coverage
+Scope:
+  - End-to-end app-new workflow
+  - End-to-end feature workflow
+  - Hook integration (SessionStart, PostToolUse)
+
+Framework: Bash test harness
+Location: tests/integration/
+```
+
+**Manual Tests:**
+
+```yaml
+Scope:
+  - Multi-platform testing (Linux, macOS)
+  - Real project initialization (existing codebases)
+  - User experience validation
+
+Location: tests/manual/TEST-PLAN.md
+```
+
+#### 10.5.2 Test Fixtures
+
+**Mock Project Structures:**
+
+```
+tests/fixtures/
+├── minimal-project/          # Empty project (app-new test)
+├── node-project/             # Node.js project (feature test)
+├── existing-docs-project/    # Project with old docs (init test)
+└── multi-spec-project/       # Project with multiple specs (index test)
+```
+
+**Mock Data:**
+
+```yaml
+# tests/fixtures/mock-index.yaml
+meta:
+  generated: "2025-11-01T00:00:00Z"
+  version: "0.1.0"
+  project_name: "test-project"
+
+specs:
+  - id: "TEST-001"
+    title: "Test feature"
+    status: "draft"
+    trace:
+      code: ["src/test.ts:10"]
+      tests: ["tests/test.test.ts:5"]
+      docs: ["docs/60-features/TEST-001.md"]
+```
+
+---
+
+**END OF TDD SECTIONS 8-10**
 
 ---
 
@@ -1824,10 +2957,12 @@ Behavior agent reads state.yaml
 |---------|------------|--------|----------------------------------|
 | 1.0     | 2025-11-01 | Team   | Initial TDD - Architecture Overview (Sections 1-5) |
 | 1.1     | 2025-11-01 | Team   | Added Component Breakdown & Data Flows (Sections 6-7) |
+| 2.0     | 2025-11-01 | Team   | COMPLETE TDD - Integration Points, Implementation Details, Quality Attributes (Sections 8-10) |
 
 ---
 
-**Document Status:** Sections 1-7 Complete (Architecture, Components, Data Flows)
-**Next Steps:** Complete Sections 8-10 (Integration Points, Implementation Details, Quality Attributes)
+**Document Status:** ✅ COMPLETE (All 10 sections finished)
+**Total Size:** ~2900 lines, 90+ pages
+**Ready For:** Implementation (Phase 1)
 **Maintained By:** Core Team
 **Last Review:** 2025-11-01
