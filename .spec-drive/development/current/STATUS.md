@@ -60,15 +60,16 @@
 
 Target: 7 ADRs for v0.1
 
-- [ ] ADR-001: YAML format for specs
-- [ ] ADR-002: SessionStart hook auto-injection
-- [ ] ADR-003: Stage-boundary autodocs updates
-- [ ] ADR-004: Four quality gates design
-- [ ] ADR-005: Aggressive existing project init
-- [ ] ADR-006: JSDoc-style @spec tags
-- [ ] ADR-007: Single state file (vs per-feature)
+- [x] ADR-001: YAML format for specs ✅
+- [x] ADR-002: SessionStart hook auto-injection ✅
+- [x] ADR-003: Stage-boundary autodocs updates ✅
+- [x] ADR-004: Four quality gates design ✅
+- [x] ADR-005: Aggressive existing project init ✅
+- [x] ADR-006: JSDoc-style @spec tags ✅
+- [x] ADR-007: Single state file (vs per-feature) ✅
 
-**Progress:** 0/7 written
+**Progress:** 7/7 written ✅ (2873 lines, ~84KB)
+**Completed:** 2025-11-01
 
 ### Data Schemas
 
