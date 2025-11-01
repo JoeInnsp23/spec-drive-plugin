@@ -18,6 +18,10 @@ from datetime import datetime
 import yaml
 
 PLUGIN_ROOT = os.environ.get('CLAUDE_PLUGIN_ROOT')
+if not PLUGIN_ROOT:
+    print("Error: CLAUDE_PLUGIN_ROOT environment variable not set", file=sys.stderr)
+    sys.exit(1)
+
 TEMPLATES_DIR = Path(PLUGIN_ROOT) / 'templates'
 
 def gather_project_info():

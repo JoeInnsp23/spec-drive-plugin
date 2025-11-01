@@ -8,9 +8,13 @@
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 
-# Environment
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}"
-SCRIPT_DIR="${PLUGIN_ROOT}/scripts"
+# Derive plugin root from script location
+# This script is in <plugin-root>/scripts/init.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Export for child processes (Python scripts)
+export CLAUDE_PLUGIN_ROOT="${PLUGIN_ROOT}"
 
 # Source utilities
 source "${SCRIPT_DIR}/utils.sh"
