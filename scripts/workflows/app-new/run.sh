@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run.sh
-# Purpose: Orchestrate app-new workflow (planning + docs generation)
-# Usage: ./run.sh [project-name]
+# Purpose: Orchestrate app-new workflow (discovery → spec → workspace → state)
+# Usage: ./run.sh --discovery-json "$(cat /tmp/discovery-data.json)"
 
 set -euo pipefail
 
@@ -32,57 +32,37 @@ NC='\033[0m'
 # Usage
 usage() {
   cat << EOF
-Usage: $0 [project-name]
+Usage: $0 --discovery-json <json-string>
 
-Initialize a new project with guided planning session and documentation.
+Initialize a new project from comprehensive discovery data.
 
-Arguments:
-  project-name    Name of the project (optional, will prompt if not provided)
+Required Arguments:
+  --discovery-json <json>    JSON string containing discovery interview results
 
 Options:
-  --help          Show this help message
+  --help                     Show this help message
 
-Examples:
-  $0 my-app
-  $0              # Interactive mode (will prompt)
+Example:
+  $0 --discovery-json "\$(cat /tmp/discovery-data.json)"
 
 Prerequisites:
   - No active workflow (complete or abandon current workflow first)
   - spec-drive plugin initialized
+  - Valid discovery JSON with all required fields
 EOF
   exit 0
 }
 
 # Parse arguments
-PROJECT_NAME=""
-PROJECT_VISION=""
-KEY_FEATURES=""
-TARGET_USERS=""
-TECH_STACK=""
+DISCOVERY_JSON=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --help)
       usage
       ;;
-    --name)
-      PROJECT_NAME="$2"
-      shift 2
-      ;;
-    --vision)
-      PROJECT_VISION="$2"
-      shift 2
-      ;;
-    --features)
-      KEY_FEATURES="$2"
-      shift 2
-      ;;
-    --users)
-      TARGET_USERS="$2"
-      shift 2
-      ;;
-    --stack)
-      TECH_STACK="$2"
+    --discovery-json)
+      DISCOVERY_JSON="$2"
       shift 2
       ;;
     *)
@@ -99,6 +79,36 @@ done
 echo -e "${BLUE}================================================${NC}"
 echo -e "${BLUE}  spec-drive: app-new Workflow${NC}"
 echo -e "${BLUE}================================================${NC}"
+echo ""
+
+# Validate discovery JSON provided
+if [[ -z "$DISCOVERY_JSON" ]]; then
+  echo -e "${RED}❌ ERROR: --discovery-json is required${NC}" >&2
+  usage
+fi
+
+# Validate discovery JSON is valid JSON
+if ! echo "$DISCOVERY_JSON" | python3 -m json.tool >/dev/null 2>&1; then
+  echo -e "${RED}❌ ERROR: Invalid JSON provided${NC}" >&2
+  echo "Discovery data must be valid JSON" >&2
+  exit 1
+fi
+
+# Extract project name for validation
+PROJECT_NAME=$(echo "$DISCOVERY_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['project']['name'])" 2>/dev/null || echo "")
+if [[ -z "$PROJECT_NAME" ]]; then
+  echo -e "${RED}❌ ERROR: Discovery JSON missing project.name${NC}" >&2
+  exit 1
+fi
+
+# Validate project name (alphanumeric, dashes, underscores)
+if [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo -e "${RED}❌ ERROR: Invalid project name: $PROJECT_NAME${NC}" >&2
+  echo "Project name must contain only letters, numbers, dashes, and underscores" >&2
+  exit 1
+fi
+
+echo -e "${GREEN}✓${NC} Project name: $PROJECT_NAME"
 echo ""
 
 # Check 1: spec-drive initialized
@@ -123,99 +133,79 @@ fi
 
 release_lock
 
-# Validate required arguments
-if [[ -z "$PROJECT_NAME" ]]; then
-  echo -e "${RED}❌ ERROR: --name is required${NC}" >&2
-  echo "Usage: $0 --name <name> --vision <vision> --features <features> --users <users> --stack <stack>" >&2
-  exit 1
-fi
-
-if [[ -z "$PROJECT_VISION" ]]; then
-  echo -e "${RED}❌ ERROR: --vision is required${NC}" >&2
-  exit 1
-fi
-
-if [[ -z "$KEY_FEATURES" ]]; then
-  echo -e "${RED}❌ ERROR: --features is required${NC}" >&2
-  exit 1
-fi
-
-if [[ -z "$TARGET_USERS" ]]; then
-  echo -e "${RED}❌ ERROR: --users is required${NC}" >&2
-  exit 1
-fi
-
-if [[ -z "$TECH_STACK" ]]; then
-  echo -e "${RED}❌ ERROR: --stack is required${NC}" >&2
-  exit 1
-fi
-
-# Validate project name (alphanumeric, dashes, underscores)
-if [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-  echo -e "${RED}❌ ERROR: Invalid project name${NC}" >&2
-  echo "Project name must contain only letters, numbers, dashes, and underscores" >&2
-  exit 1
-fi
-
-echo ""
-echo -e "${GREEN}✓${NC} Project name: $PROJECT_NAME"
+echo -e "${GREEN}✓${NC} All prerequisite checks passed"
 echo ""
 
 # ==============================================================================
-# Step 1: Planning Session
+# Step 1: Create Comprehensive Spec
 # ==============================================================================
 
-echo -e "${BLUE}Step 1/3: Planning Session${NC}"
-echo "Creating APP-001 spec..."
+echo -e "${BLUE}Step 1/4: Create Comprehensive Spec${NC}"
+echo "Generating APP-001 spec from discovery data..."
 echo ""
 
-if ! "$SCRIPT_DIR/planning-session.sh" \
-  --name "$PROJECT_NAME" \
-  --vision "$PROJECT_VISION" \
-  --features "$KEY_FEATURES" \
-  --users "$TARGET_USERS" \
-  --stack "$TECH_STACK"; then
-  echo -e "${RED}❌ ERROR: Planning session failed${NC}" >&2
+if ! "$SCRIPT_DIR/create-spec.sh" "$DISCOVERY_JSON"; then
+  echo -e "${RED}❌ ERROR: Spec creation failed${NC}" >&2
   exit 1
 fi
 
-echo -e "${GREEN}✓${NC} Planning session complete"
+SPEC_ID="APP-001"
+echo -e "${GREEN}✓${NC} Created $SPEC_ID spec"
 echo ""
 
 # ==============================================================================
-# Step 2: Generate Documentation
+# Step 2: Update AI-Navigable Index
 # ==============================================================================
 
-echo -e "${BLUE}Step 2/3: Generate Documentation${NC}"
-echo "Creating initial documentation suite..."
+echo -e "${BLUE}Step 2/4: Update AI-Navigable Index${NC}"
+echo "Creating index for AI navigation..."
 echo ""
 
-if ! "$SCRIPT_DIR/generate-docs.sh"; then
-  echo -e "${RED}❌ ERROR: Documentation generation failed${NC}" >&2
-  # Rollback: Remove APP-001 spec
-  rm -f "$SPEC_DRIVE_DIR/specs/APP-001.yaml"
-  echo "Rolled back APP-001 spec" >&2
+if ! "$SCRIPT_DIR/update-index.sh" "$SPEC_ID"; then
+  echo -e "${RED}❌ ERROR: Index update failed${NC}" >&2
+  # Rollback: Remove spec
+  rm -f "$SPEC_DRIVE_DIR/specs/$SPEC_ID.yaml"
+  echo "Rolled back $SPEC_ID spec" >&2
   exit 1
 fi
 
-echo -e "${GREEN}✓${NC} Documentation generated"
+echo -e "${GREEN}✓${NC} Updated index"
 echo ""
 
 # ==============================================================================
-# Step 3: Initialize Workflow State
+# Step 3: Initialize Development Workspace
 # ==============================================================================
 
-echo -e "${BLUE}Step 3/3: Initialize Workflow${NC}"
+echo -e "${BLUE}Step 3/4: Initialize Development Workspace${NC}"
+echo "Setting up workspace for $SPEC_ID..."
+echo ""
+
+if ! "$SCRIPT_DIR/init-development.sh" "$SPEC_ID"; then
+  echo -e "${RED}❌ ERROR: Workspace initialization failed${NC}" >&2
+  # Rollback: Remove spec and index entry
+  rm -f "$SPEC_DRIVE_DIR/specs/$SPEC_ID.yaml"
+  echo "Rolled back $SPEC_ID spec" >&2
+  exit 1
+fi
+
+echo -e "${GREEN}✓${NC} Workspace initialized"
+echo ""
+
+# ==============================================================================
+# Step 4: Initialize Workflow State
+# ==============================================================================
+
+echo -e "${BLUE}Step 4/4: Initialize Workflow State${NC}"
 echo "Setting up workflow state..."
 echo ""
 
 # Start workflow using workflow engine
-if ! workflow_start "app-new" "APP-001" 2>&1; then
+if ! workflow_start "app-new" "$SPEC_ID" 2>&1; then
   echo -e "${RED}❌ ERROR: Failed to initialize workflow state${NC}" >&2
   exit 1
 fi
 
-echo -e "${GREEN}✓${NC} Workflow initialized"
+echo -e "${GREEN}✓${NC} Workflow state initialized"
 echo ""
 
 # ==============================================================================
@@ -226,17 +216,21 @@ echo -e "${GREEN}================================================${NC}"
 echo -e "${GREEN}  🎉 app-new Complete!${NC}"
 echo -e "${GREEN}================================================${NC}"
 echo ""
-echo "Your project is ready to start building features."
+echo "Your project is initialized with comprehensive specifications."
 echo ""
 echo -e "${YELLOW}What was created:${NC}"
-echo "  • APP-001 spec in .spec-drive/specs/"
-echo "  • Documentation suite in docs/"
-echo "  • Workflow state initialized"
+echo "  • $SPEC_ID spec: .spec-drive/specs/$SPEC_ID.yaml"
+echo "  • AI-navigable index: .spec-drive/index.yaml"
+echo "  • Development workspace: .spec-drive/development/current/$SPEC_ID/"
+echo "  • Workflow state initialized (app-new → discover stage)"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
-echo "  1. Review generated docs: README.md, ARCHITECTURE.md"
-echo "  2. Start building features: /spec-drive:feature"
-echo "  3. Check workflow status: /spec-drive:status"
+echo "  1. Review spec: .spec-drive/specs/$SPEC_ID.yaml"
+echo "  2. Check AI index: .spec-drive/index.yaml"
+echo "  3. Review workspace: .spec-drive/development/current/$SPEC_ID/"
+echo "  4. Resolve any open questions if documented"
+echo "  5. Start building features: /spec-drive:feature"
+echo "  6. Check status anytime: /spec-drive:status"
 echo ""
 echo -e "${BLUE}Happy building! 🚀${NC}"
 echo ""
