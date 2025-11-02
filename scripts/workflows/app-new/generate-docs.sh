@@ -101,24 +101,30 @@ COMMON_VARS=(
   --var "DATE=$DATE"
 )
 
-# Template mapping: template_file -> output_file
-declare -A DOCS=(
-  ["SYSTEM-OVERVIEW.md.template"]="docs/00-overview/SYSTEM-OVERVIEW.md"
-  ["GLOSSARY.md.template"]="docs/00-overview/GLOSSARY.md"
-  ["ARCHITECTURE.md.template"]="docs/10-architecture/ARCHITECTURE.md"
-  ["COMPONENT-CATALOG.md.template"]="docs/10-architecture/COMPONENT-CATALOG.md"
-  ["DATA-FLOWS.md.template"]="docs/10-architecture/DATA-FLOWS.md"
-  ["RUNTIME-DEPLOYMENT.md.template"]="docs/10-architecture/RUNTIME-DEPLOYMENT.md"
-  ["OBSERVABILITY.md.template"]="docs/10-architecture/OBSERVABILITY.md"
-  ["BUILD-RELEASE.md.template"]="docs/20-build/BUILD-RELEASE.md"
-  ["CI-QUALITY-GATES.md.template"]="docs/20-build/CI-QUALITY-GATES.md"
-  ["PRODUCT-BRIEF.md.template"]="docs/PRODUCT-BRIEF.md"
+# Template mapping (bash 3.2+ compatible - no associative arrays)
+# Format: "template:output" pairs
+DOCS_MAP=(
+  "SYSTEM-OVERVIEW.md.template:docs/00-overview/SYSTEM-OVERVIEW.md"
+  "GLOSSARY.md.template:docs/00-overview/GLOSSARY.md"
+  "ARCHITECTURE.md.template:docs/10-architecture/ARCHITECTURE.md"
+  "COMPONENT-CATALOG.md.template:docs/10-architecture/COMPONENT-CATALOG.md"
+  "DATA-FLOWS.md.template:docs/10-architecture/DATA-FLOWS.md"
+  "RUNTIME-DEPLOYMENT.md.template:docs/10-architecture/RUNTIME-DEPLOYMENT.md"
+  "OBSERVABILITY.md.template:docs/10-architecture/OBSERVABILITY.md"
+  "BUILD-RELEASE.md.template:docs/20-build/BUILD-RELEASE.md"
+  "CI-QUALITY-GATES.md.template:docs/20-build/CI-QUALITY-GATES.md"
+  "PRODUCT-BRIEF.md.template:docs/PRODUCT-BRIEF.md"
 )
+
+# Store outputs for later index update
+GENERATED_DOCS=()
 
 # Render each template
 doc_count=0
-for template in "${!DOCS[@]}"; do
-  output="${DOCS[$template]}"
+for mapping in "${DOCS_MAP[@]}"; do
+  # Split on colon
+  template="${mapping%%:*}"
+  output="${mapping##*:}"
   template_path="$TEMPLATES_DIR/$template"
 
   if [[ ! -f "$template_path" ]]; then
@@ -131,6 +137,7 @@ for template in "${!DOCS[@]}"; do
     --output "$output" \
     "${COMMON_VARS[@]}" 2>&1; then
     doc_count=$((doc_count + 1))
+    GENERATED_DOCS+=("$output")
     echo -e "  ${GREEN}✓${NC} Generated: $output"
   else
     echo -e "  ${RED}✗${NC} Failed: $output"
@@ -183,8 +190,8 @@ echo -e "${GREEN}✓${NC} Generated $doc_count documents"
 
 echo -e "${BLUE}Updating SPECS-INDEX...${NC}"
 
-# Build docs array for index
-for output in "${DOCS[@]}"; do
+# Build docs array for index using generated docs
+for output in "${GENERATED_DOCS[@]}"; do
   doc_title=$(basename "$output" .md | sed 's/-/ /g')
   yq eval ".docs += [{\"file\": \"$output\", \"title\": \"$doc_title\", \"updated\": \"$TIMESTAMP\"}]" \
     "$INDEX_FILE" -i
