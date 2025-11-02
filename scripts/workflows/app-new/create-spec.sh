@@ -213,9 +213,10 @@ echo -e "${GREEN}✓${NC} Added $FEATURES_COUNT features"
 echo -e "${BLUE}Adding technical context...${NC}"
 
 # Stack
-python3 << 'EOF' > /tmp/tech_stack.sh
+cat > /tmp/process_tech_stack.py << 'PYTHON_EOF'
 import json
-tech = json.load(open('$TEMP_JSON'))['technical']
+import sys
+tech = json.load(open(sys.argv[1]))['technical']
 stack = tech.get('stack', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -223,7 +224,10 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'TECH_LANG="{bash_escape(stack.get("language", ""))}"')
 print(f'TECH_LANG_WHY="{bash_escape(stack.get("language_rationale", ""))}"')
@@ -233,9 +237,11 @@ print(f'TECH_DB="{bash_escape(stack.get("database", ""))}"')
 print(f'TECH_DB_WHY="{bash_escape(stack.get("database_rationale", ""))}"')
 print(f'TECH_HOSTING="{bash_escape(stack.get("hosting", ""))}"')
 print(f'TECH_HOSTING_WHY="{bash_escape(stack.get("hosting_rationale", ""))}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_stack.sh
+PYTHON_EOF
+
+python3 /tmp/process_tech_stack.py "$TEMP_JSON" > /tmp/tech_stack.sh
 source /tmp/tech_stack.sh
+rm -f /tmp/process_tech_stack.py
 
 yq eval -i ".technical.stack.language = \"$TECH_LANG\" | \
   .technical.stack.language_rationale = \"$TECH_LANG_WHY\" | \
@@ -254,9 +260,10 @@ for ((i=0; i<TOOLS_COUNT; i++)); do
 done
 
 # Architecture
-python3 << 'EOF' > /tmp/tech_arch.sh
+cat > /tmp/process_tech_arch.py << 'PYTHON_EOF'
 import json
-tech = json.load(open('$TEMP_JSON'))['technical']
+import sys
+tech = json.load(open(sys.argv[1]))['technical']
 arch = tech.get('architecture', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -264,12 +271,17 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'ARCH_STYLE="{bash_escape(arch.get("style", ""))}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_arch.sh
+PYTHON_EOF
+
+python3 /tmp/process_tech_arch.py "$TEMP_JSON" > /tmp/tech_arch.sh
 source /tmp/tech_arch.sh
+rm -f /tmp/process_tech_arch.py
 
 yq eval -i ".technical.architecture.style = \"$ARCH_STYLE\"" "$TEMP_YAML"
 
@@ -288,9 +300,10 @@ for ((i=0; i<COMPLIANCE_COUNT; i++)); do
 done
 
 # Data
-python3 << 'EOF' > /tmp/tech_data.sh
+cat > /tmp/process_tech_data.py << 'PYTHON_EOF'
 import json
-tech = json.load(open('$TEMP_JSON'))['technical']
+import sys
+tech = json.load(open(sys.argv[1]))['technical']
 data = tech.get('data', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -298,14 +311,19 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'DATA_SCALE="{bash_escape(data.get("scale_expectations", ""))}"')
 print(f'DATA_SENSITIVE="{str(data.get("sensitive_data", False)).lower()}"')
 print(f'DATA_BACKUP="{bash_escape(data.get("backup_requirements", ""))}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_data.sh
+PYTHON_EOF
+
+python3 /tmp/process_tech_data.py "$TEMP_JSON" > /tmp/tech_data.sh
 source /tmp/tech_data.sh
+rm -f /tmp/process_tech_data.py
 
 yq eval -i ".technical.data.scale_expectations = \"$DATA_SCALE\" | \
   .technical.data.sensitive_data = $DATA_SENSITIVE | \
@@ -326,9 +344,10 @@ for ((i=0; i<SENSITIVE_COUNT; i++)); do
 done
 
 # Auth
-python3 << 'EOF' > /tmp/tech_auth.sh
+cat > /tmp/process_tech_auth.py << 'PYTHON_EOF'
 import json
-tech = json.load(open('$TEMP_JSON'))['technical']
+import sys
+tech = json.load(open(sys.argv[1]))['technical']
 auth = tech.get('auth', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -336,13 +355,18 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'AUTH_APPROACH="{bash_escape(auth.get("approach", ""))}"')
 print(f'AUTH_RBAC="{str(auth.get("role_based_access", False)).lower()}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_auth.sh
+PYTHON_EOF
+
+python3 /tmp/process_tech_auth.py "$TEMP_JSON" > /tmp/tech_auth.sh
 source /tmp/tech_auth.sh
+rm -f /tmp/process_tech_auth.py
 
 yq eval -i ".technical.auth.approach = \"$AUTH_APPROACH\" | \
   .technical.auth.role_based_access = $AUTH_RBAC" "$TEMP_YAML"
@@ -403,9 +427,10 @@ PYTHON_EOF
 done
 
 # Infrastructure
-python3 << 'EOF' > /tmp/tech_infra.sh
+cat > /tmp/process_tech_infra.py << 'PYTHON_EOF'
 import json
-tech = json.load(open('$TEMP_JSON'))['technical']
+import sys
+tech = json.load(open(sys.argv[1]))['technical']
 infra = tech.get('infrastructure', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -413,14 +438,19 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'INFRA_PLATFORM="{bash_escape(infra.get("hosting_platform", ""))}"')
 print(f'INFRA_CICD="{bash_escape(infra.get("cicd_preference", ""))}"')
 print(f'INFRA_PERF="{bash_escape(infra.get("performance_requirements", ""))}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_infra.sh
+PYTHON_EOF
+
+python3 /tmp/process_tech_infra.py "$TEMP_JSON" > /tmp/tech_infra.sh
 source /tmp/tech_infra.sh
+rm -f /tmp/process_tech_infra.py
 
 yq eval -i ".technical.infrastructure.hosting_platform = \"$INFRA_PLATFORM\" | \
   .technical.infrastructure.cicd_preference = \"$INFRA_CICD\" | \
@@ -440,9 +470,10 @@ echo -e "${GREEN}✓${NC} Added technical context"
 # Add constraints
 echo -e "${BLUE}Adding constraints...${NC}"
 
-python3 << 'EOF' > /tmp/constraints.sh
+cat > /tmp/process_constraints.py << 'PYTHON_EOF'
 import json
-constraints = json.load(open('$TEMP_JSON')).get('constraints', {})
+import sys
+constraints = json.load(open(sys.argv[1])).get('constraints', {})
 timeline = constraints.get('timeline', {})
 team = constraints.get('team', {})
 budget = constraints.get('budget', {})
@@ -452,15 +483,20 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 
 print(f'TIMELINE_DATE="{bash_escape(timeline.get("target_date", ""))}"')
 print(f'TIMELINE_HARD="{str(timeline.get("hard_deadline", False)).lower()}"')
 print(f'TEAM_SIZE="{team.get("size", 0)}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/constraints.sh
+PYTHON_EOF
+
+python3 /tmp/process_constraints.py "$TEMP_JSON" > /tmp/constraints.sh
 source /tmp/constraints.sh
+rm -f /tmp/process_constraints.py
 
 yq eval -i ".constraints.timeline.target_date = \"$TIMELINE_DATE\" | \
   .constraints.timeline.hard_deadline = $TIMELINE_HARD | \
@@ -501,9 +537,10 @@ for ((i=0; i<BUDGET_CONSTRAINTS_COUNT; i++)); do
   yq eval -i ".constraints.budget.constraints[$i] = \"$CONSTRAINT\"" "$TEMP_YAML"
 done
 
-python3 << 'EOF' > /tmp/budget.sh
+cat > /tmp/process_budget.py << 'PYTHON_EOF'
 import json
-constraints = json.load(open('$TEMP_JSON')).get('constraints', {})
+import sys
+constraints = json.load(open(sys.argv[1])).get('constraints', {})
 budget = constraints.get('budget', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -511,13 +548,18 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'BUDGET_INFRA="{bash_escape(budget.get("infrastructure_budget", ""))}"')
 print(f'BUDGET_SERVICE="{bash_escape(budget.get("service_budget", ""))}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/budget.sh
+PYTHON_EOF
+
+python3 /tmp/process_budget.py "$TEMP_JSON" > /tmp/budget.sh
 source /tmp/budget.sh
+rm -f /tmp/process_budget.py
 
 yq eval -i ".constraints.budget.infrastructure_budget = \"$BUDGET_INFRA\" | \
   .constraints.budget.service_budget = \"$BUDGET_SERVICE\"" "$TEMP_YAML"
@@ -572,21 +614,27 @@ echo -e "${GREEN}✓${NC} Added $RISKS_COUNT risks"
 # Add success criteria
 echo -e "${BLUE}Adding success criteria...${NC}"
 
-python3 << 'EOF' > /tmp/success.sh
+cat > /tmp/process_success.py << 'PYTHON_EOF'
 import json
-success = json.load(open('$TEMP_JSON')).get('success', {})
+import sys
+success = json.load(open(sys.argv[1])).get('success', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
     if not s:
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'SUCCESS_DOD="{bash_escape(success.get("definition_of_done", ""))}"')
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/success.sh
+PYTHON_EOF
+
+python3 /tmp/process_success.py "$TEMP_JSON" > /tmp/success.sh
 source /tmp/success.sh
+rm -f /tmp/process_success.py
 
 yq eval -i ".success.definition_of_done = \"$SUCCESS_DOD\"" "$TEMP_YAML"
 
@@ -612,9 +660,10 @@ for ((i=0; i<METRICS_COUNT; i++)); do
 done
 
 # Future vision
-python3 << 'EOF' > /tmp/vision.sh
+cat > /tmp/process_vision.py << 'PYTHON_EOF'
 import json
-success = json.load(open('$TEMP_JSON')).get('success', {})
+import sys
+success = json.load(open(sys.argv[1])).get('success', {})
 vision = success.get('future_vision', {})
 # Escape for bash double-quoted strings
 def bash_escape(s):
@@ -622,11 +671,19 @@ def bash_escape(s):
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
     # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
-EOF
-sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/vision.sh
+# Note: This file doesn't output anything itself, just defines the function
+# Actual output would be added here if needed
+PYTHON_EOF
+
+# No output from vision processing, but create empty file for consistency
+python3 /tmp/process_vision.py "$TEMP_JSON" > /tmp/vision.sh || touch /tmp/vision.sh
 source /tmp/vision.sh
+rm -f /tmp/process_vision.py
 
 # Long term goals
 GOALS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_JSON'))['success']['future_vision'].get('long_term_goals', [])))")
