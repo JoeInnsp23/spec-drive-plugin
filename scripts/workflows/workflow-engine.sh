@@ -18,6 +18,9 @@
 #   - All functions validate against state-schema.json
 #   - Uses flock for concurrent access protection
 
+# Note: This file is sourced, not executed directly
+# Don't use 'set -u' in sourced files with associative arrays
+# as it can cause issues across different bash versions
 set -eo pipefail
 
 # Constants
@@ -33,9 +36,6 @@ declare -A STAGE_NEXT=(
   ["implement"]="verify"
   ["verify"]="done"
 )
-
-# Enable unbound variable check AFTER associative array declaration
-set -u
 
 # Utility: Acquire file lock
 acquire_lock() {
