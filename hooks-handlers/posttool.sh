@@ -47,7 +47,7 @@ trap release_lock EXIT
 # Only proceed if we're in a project with spec-drive initialized
 if [[ ! -d "$SPEC_DRIVE_DIR" ]]; then
   # Not a spec-drive project, skip silently
-  cat << 'EOF'
+  cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
 }
@@ -72,7 +72,7 @@ YAML
     release_lock
   else
     # Lock acquisition failed - skip state creation, return success
-    cat << 'EOF'
+    cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
 }
@@ -98,8 +98,8 @@ if [[ "$TOOL_NAME" =~ ^(Write|Edit|Delete)$ ]]; then
   # If lock acquisition fails, skip silently - don't crash Claude Code
 fi
 
-# Always return success
-cat << 'EOF'
+# Always return success - suppress write errors if pipe is broken
+cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
 }
