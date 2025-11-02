@@ -61,10 +61,11 @@ PROJECT_VISION=$(yq eval '.project.vision' "$SPEC_FILE")
 SPEC_STATUS=$(yq eval '.status' "$SPEC_FILE")
 
 # Add project overview
-yq eval -i ".project.name = \"$PROJECT_NAME\" | \
-  .project.vision = \"$PROJECT_VISION\" | \
-  .project.primary_spec = \"$SPEC_ID\" | \
-  .project.status = \"$SPEC_STATUS\"" "$TEMP_INDEX"
+PROJECT_NAME="$PROJECT_NAME" PROJECT_VISION="$PROJECT_VISION" SPEC_ID="$SPEC_ID" SPEC_STATUS="$SPEC_STATUS" \
+  yq eval -i ".project.name = env(PROJECT_NAME) | \
+  .project.vision = env(PROJECT_VISION) | \
+  .project.primary_spec = env(SPEC_ID) | \
+  .project.status = env(SPEC_STATUS)" "$TEMP_INDEX"
 
 echo -e "${GREEN}✓${NC} Added project overview"
 
@@ -88,9 +89,10 @@ if [[ -d "$SPECS_DIR" ]]; then
       SPEC_TITLE=$(yq eval '.title' "$spec" 2>/dev/null || echo "$SPEC_NAME")
       SPEC_TYPE=$(yq eval '.type' "$spec" 2>/dev/null || echo "unknown")
 
-      yq eval -i ".entry_points.specs.index[$SPEC_COUNT].file = \"$spec\" | \
-        .entry_points.specs.index[$SPEC_COUNT].title = \"$SPEC_TITLE\" | \
-        .entry_points.specs.index[$SPEC_COUNT].type = \"$SPEC_TYPE\"" "$TEMP_INDEX"
+      spec="$spec" SPEC_TITLE="$SPEC_TITLE" SPEC_TYPE="$SPEC_TYPE" SPEC_COUNT="$SPEC_COUNT" \
+        yq eval -i ".entry_points.specs.index[env(SPEC_COUNT)].file = env(spec) | \
+        .entry_points.specs.index[env(SPEC_COUNT)].title = env(SPEC_TITLE) | \
+        .entry_points.specs.index[env(SPEC_COUNT)].type = env(SPEC_TYPE)" "$TEMP_INDEX"
 
       SPEC_COUNT=$((SPEC_COUNT + 1))
     fi
@@ -112,8 +114,9 @@ if [[ "$USERS_COUNT" != "null" && "$USERS_COUNT" -gt 0 ]]; then
     USER_TYPE=$(yq eval ".users[$i].type" "$SPEC_FILE")
     USER_ROLE=$(yq eval ".users[$i].role_context" "$SPEC_FILE")
 
-    yq eval -i ".entry_points.users.index[$i].type = \"$USER_TYPE\" | \
-      .entry_points.users.index[$i].role = \"$USER_ROLE\" | \
+    USER_TYPE="$USER_TYPE" USER_ROLE="$USER_ROLE" yq eval -i \
+      ".entry_points.users.index[$i].type = env(USER_TYPE) | \
+      .entry_points.users.index[$i].role = env(USER_ROLE) | \
       .entry_points.users.index[$i].path = \".users[$i]\"" "$TEMP_INDEX"
   done
 
@@ -134,9 +137,10 @@ if [[ "$FEATURES_COUNT" != "null" && "$FEATURES_COUNT" -gt 0 ]]; then
     FEATURE_PRIORITY=$(yq eval ".features[$i].priority" "$SPEC_FILE")
     FEATURE_COMPLEXITY=$(yq eval ".features[$i].complexity" "$SPEC_FILE")
 
-    yq eval -i ".entry_points.features.index[$i].title = \"$FEATURE_TITLE\" | \
-      .entry_points.features.index[$i].priority = \"$FEATURE_PRIORITY\" | \
-      .entry_points.features.index[$i].complexity = \"$FEATURE_COMPLEXITY\" | \
+    FEATURE_TITLE="$FEATURE_TITLE" FEATURE_PRIORITY="$FEATURE_PRIORITY" FEATURE_COMPLEXITY="$FEATURE_COMPLEXITY" \
+      yq eval -i ".entry_points.features.index[$i].title = env(FEATURE_TITLE) | \
+      .entry_points.features.index[$i].priority = env(FEATURE_PRIORITY) | \
+      .entry_points.features.index[$i].complexity = env(FEATURE_COMPLEXITY) | \
       .entry_points.features.index[$i].path = \".features[$i]\"" "$TEMP_INDEX"
   done
 
@@ -151,13 +155,14 @@ if [[ "$TECH_EXISTS" != "null" ]]; then
   TECH_DB=$(yq eval '.technical.stack.database' "$SPEC_FILE" 2>/dev/null || echo "")
   ARCH_STYLE=$(yq eval '.technical.architecture.style' "$SPEC_FILE" 2>/dev/null || echo "")
 
-  yq eval -i ".entry_points.technical.description = \"Tech stack, architecture, infrastructure\" | \
-    .entry_points.technical.location = \"$SPEC_FILE\" | \
+  SPEC_FILE="$SPEC_FILE" TECH_STACK="$TECH_STACK" TECH_FRAMEWORK="$TECH_FRAMEWORK" TECH_DB="$TECH_DB" ARCH_STYLE="$ARCH_STYLE" \
+    yq eval -i ".entry_points.technical.description = \"Tech stack, architecture, infrastructure\" | \
+    .entry_points.technical.location = env(SPEC_FILE) | \
     .entry_points.technical.path = \".technical\" | \
-    .entry_points.technical.stack.language = \"$TECH_STACK\" | \
-    .entry_points.technical.stack.framework = \"$TECH_FRAMEWORK\" | \
-    .entry_points.technical.stack.database = \"$TECH_DB\" | \
-    .entry_points.technical.architecture = \"$ARCH_STYLE\"" "$TEMP_INDEX"
+    .entry_points.technical.stack.language = env(TECH_STACK) | \
+    .entry_points.technical.stack.framework = env(TECH_FRAMEWORK) | \
+    .entry_points.technical.stack.database = env(TECH_DB) | \
+    .entry_points.technical.architecture = env(ARCH_STYLE)" "$TEMP_INDEX"
 
   echo -e "${GREEN}✓${NC} Indexed technical details"
 fi
@@ -176,9 +181,10 @@ if [[ "$RISKS_COUNT" != "null" && "$RISKS_COUNT" -gt 0 ]]; then
     RISK_IMPACT=$(yq eval ".risks[$i].impact" "$SPEC_FILE")
     RISK_LIKELIHOOD=$(yq eval ".risks[$i].likelihood" "$SPEC_FILE")
 
-    yq eval -i ".entry_points.risks.index[$i].type = \"$RISK_TYPE\" | \
-      .entry_points.risks.index[$i].impact = \"$RISK_IMPACT\" | \
-      .entry_points.risks.index[$i].likelihood = \"$RISK_LIKELIHOOD\" | \
+    RISK_TYPE="$RISK_TYPE" RISK_IMPACT="$RISK_IMPACT" RISK_LIKELIHOOD="$RISK_LIKELIHOOD" \
+      yq eval -i ".entry_points.risks.index[$i].type = env(RISK_TYPE) | \
+      .entry_points.risks.index[$i].impact = env(RISK_IMPACT) | \
+      .entry_points.risks.index[$i].likelihood = env(RISK_LIKELIHOOD) | \
       .entry_points.risks.index[$i].path = \".risks[$i]\"" "$TEMP_INDEX"
   done
 
@@ -198,8 +204,9 @@ if [[ "$QUESTIONS_COUNT" != "null" && "$QUESTIONS_COUNT" -gt 0 ]]; then
     QUESTION=$(yq eval ".open_questions[$i].question" "$SPEC_FILE")
     Q_PRIORITY=$(yq eval ".open_questions[$i].priority" "$SPEC_FILE")
 
-    yq eval -i ".entry_points.open_questions.index[$i].question = \"$QUESTION\" | \
-      .entry_points.open_questions.index[$i].priority = \"$Q_PRIORITY\" | \
+    QUESTION="$QUESTION" Q_PRIORITY="$Q_PRIORITY" \
+      yq eval -i ".entry_points.open_questions.index[$i].question = env(QUESTION) | \
+      .entry_points.open_questions.index[$i].priority = env(Q_PRIORITY) | \
       .entry_points.open_questions.index[$i].path = \".open_questions[$i]\"" "$TEMP_INDEX"
   done
 
@@ -236,13 +243,14 @@ echo -e "${GREEN}✓${NC} Entry points created"
 
 echo -e "${BLUE}Creating quick reference...${NC}"
 
-yq eval -i ".quick_reference.\"What is this project?\" = \"See: .project.vision in $SPEC_FILE\" | \
-  .quick_reference.\"Who are the users?\" = \"See: .users[] in $SPEC_FILE\" | \
-  .quick_reference.\"What features?\" = \"See: .features[] in $SPEC_FILE\" | \
-  .quick_reference.\"What tech stack?\" = \"See: .technical.stack in $SPEC_FILE\" | \
-  .quick_reference.\"What are the risks?\" = \"See: .risks[] in $SPEC_FILE\" | \
-  .quick_reference.\"What's the MVP?\" = \"See: .success.mvp_scope in $SPEC_FILE\" | \
-  .quick_reference.\"Any open questions?\" = \"See: .open_questions[] in $SPEC_FILE\"" "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i \
+  '.quick_reference["What is this project?"] = "See: .project.vision in " + env(SPEC_FILE) | \
+  .quick_reference["Who are the users?"] = "See: .users[] in " + env(SPEC_FILE) | \
+  .quick_reference["What features?"] = "See: .features[] in " + env(SPEC_FILE) | \
+  .quick_reference["What tech stack?"] = "See: .technical.stack in " + env(SPEC_FILE) | \
+  .quick_reference["What are the risks?"] = "See: .risks[] in " + env(SPEC_FILE) | \
+  .quick_reference["What'"'"'s the MVP?"] = "See: .success.mvp_scope in " + env(SPEC_FILE) | \
+  .quick_reference["Any open questions?"] = "See: .open_questions[] in " + env(SPEC_FILE)' "$TEMP_INDEX"
 
 echo -e "${GREEN}✓${NC} Quick reference created"
 
