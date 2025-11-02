@@ -113,8 +113,8 @@ user = json.load(open('$TEMP_JSON'))['users'][$i]
 def bash_escape(s):
     if not s:
         return ""
-    # Replace newlines with space (prevents "for: command not found")
-    s = s.replace('\\n', ' ').replace('\\r', ' ')
+    # Replace ACTUAL newline characters (not the string "\\n")
+    s = s.replace('\n', ' ').replace('\r', ' ')
     # Replace single quotes for bash: ' becomes '\''
     s = s.replace("'", "'\\''")
     return s
@@ -158,7 +158,7 @@ feature = json.load(open('$TEMP_JSON'))['features'][$i]
 def bash_escape(s):
     if not s:
         return ""
-    s = s.replace('\\n', ' ').replace('\\r', ' ')
+    s = s.replace('\n', ' ').replace('\r', ' ')
     s = s.replace("'", "'\\''")
     return s
 print(f"FEAT_TITLE='{bash_escape(feature.get('title', ''))}'")
@@ -206,7 +206,7 @@ stack = tech.get('stack', {})
 def bash_escape(s):
     if not s:
         return ""
-    s = s.replace('\\n', ' ').replace('\\r', ' ')
+    s = s.replace('\n', ' ').replace('\r', ' ')
     s = s.replace("'", "'\\''")
     return s
 print(f"TECH_LANG='{bash_escape(stack.get('language', ''))}'")
@@ -245,7 +245,7 @@ arch = tech.get('architecture', {})
 def bash_escape(s):
     if not s:
         return ""
-    s = s.replace('\\n', ' ').replace('\\r', ' ')
+    s = s.replace('\n', ' ').replace('\r', ' ')
     s = s.replace("'", "'\\''")
     return s
 print(f"ARCH_STYLE='{bash_escape(arch.get('style', ''))}'")
@@ -337,7 +337,7 @@ integration = json.load(open('$TEMP_JSON'))['technical']['integrations'][$i]
 def bash_escape(s):
     if not s:
         return ""
-    s = s.replace('\\n', ' ').replace('\\r', ' ')
+    s = s.replace('\n', ' ').replace('\r', ' ')
     s = s.replace("'", "'\\''")
     return s
 print(f"INT_SYSTEM='{bash_escape(integration.get('system', ''))}'")
