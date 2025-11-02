@@ -243,14 +243,14 @@ echo -e "${GREEN}✓${NC} Entry points created"
 
 echo -e "${BLUE}Creating quick reference...${NC}"
 
-SPEC_FILE="$SPEC_FILE" yq eval -i \
-  '.quick_reference["What is this project?"] = "See: .project.vision in " + env(SPEC_FILE) | \
-  .quick_reference["Who are the users?"] = "See: .users[] in " + env(SPEC_FILE) | \
-  .quick_reference["What features?"] = "See: .features[] in " + env(SPEC_FILE) | \
-  .quick_reference["What tech stack?"] = "See: .technical.stack in " + env(SPEC_FILE) | \
-  .quick_reference["What are the risks?"] = "See: .risks[] in " + env(SPEC_FILE) | \
-  .quick_reference["What'"'"'s the MVP?"] = "See: .success.mvp_scope in " + env(SPEC_FILE) | \
-  .quick_reference["Any open questions?"] = "See: .open_questions[] in " + env(SPEC_FILE)' "$TEMP_INDEX"
+# Add quick reference entries one by one to avoid line continuation issues
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["What is this project?"] = "See: .project.vision in " + env(SPEC_FILE)' "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["Who are the users?"] = "See: .users[] in " + env(SPEC_FILE)' "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["What features?"] = "See: .features[] in " + env(SPEC_FILE)' "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["What tech stack?"] = "See: .technical.stack in " + env(SPEC_FILE)' "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["What are the risks?"] = "See: .risks[] in " + env(SPEC_FILE)' "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["What'"'"'s the MVP?"] = "See: .success.mvp_scope in " + env(SPEC_FILE)' "$TEMP_INDEX"
+SPEC_FILE="$SPEC_FILE" yq eval -i '.quick_reference["Any open questions?"] = "See: .open_questions[] in " + env(SPEC_FILE)' "$TEMP_INDEX"
 
 echo -e "${GREEN}✓${NC} Quick reference created"
 
