@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # run.sh
 # Purpose: Orchestrate app-new workflow (planning + docs generation)
 # Usage: ./run.sh [project-name]

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # verify.sh
 # Purpose: Verify stage - final checks, complete workflow
 # Usage: Called automatically by workflow advance

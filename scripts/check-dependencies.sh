@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # check-dependencies.sh
 # Auto-install required dependencies for spec-drive workflows
 

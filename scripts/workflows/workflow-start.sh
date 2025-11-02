@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # workflow-start.sh
 # Purpose: Start a new workflow
 # Usage: ./workflow-start.sh --workflow <type> --spec <SPEC-ID>

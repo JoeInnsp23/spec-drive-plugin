@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # init-directories.sh
 # Purpose: Initialize .spec-drive/ directory structure in user project
 

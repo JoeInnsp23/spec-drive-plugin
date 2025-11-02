@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # spec-drive initialization script
 # Called by: /spec-drive:init command via !bash

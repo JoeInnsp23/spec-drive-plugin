@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # gate-4-verify.sh
 # Purpose: Quality gate for Verify stage
 # Validates: All ACs met, no shortcuts, traceability complete, docs updated

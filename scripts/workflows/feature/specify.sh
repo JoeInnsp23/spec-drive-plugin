@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # specify.sh
 # Purpose: Specify stage - add/validate acceptance criteria
 # Usage: Called automatically by workflow advance

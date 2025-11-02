@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # validate-templates.sh
 # Purpose: Validate documentation templates and document their variables
 

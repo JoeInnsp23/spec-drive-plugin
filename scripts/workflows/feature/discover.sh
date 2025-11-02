@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # discover.sh
 # Purpose: Discover stage - requirements gathering and spec creation
 # Usage: ./discover.sh <feature-title>

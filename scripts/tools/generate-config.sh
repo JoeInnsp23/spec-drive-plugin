@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # generate-config.sh
 # Purpose: Generate config.yaml from template with auto-detection
 

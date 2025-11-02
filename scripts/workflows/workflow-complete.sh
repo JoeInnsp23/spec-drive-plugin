@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # workflow-complete.sh
 # Purpose: Mark workflow complete
 # Usage: ./workflow-complete.sh

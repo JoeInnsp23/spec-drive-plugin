@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # workflow-advance.sh
 # Purpose: Advance workflow to next stage
 # Usage: ./workflow-advance.sh

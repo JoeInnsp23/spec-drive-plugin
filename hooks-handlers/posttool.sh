@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # posttool.sh
 # PostToolUse hook for spec-drive plugin
 # Sets dirty flag when code/docs are modified

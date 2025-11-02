@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # run.sh
 # Purpose: Orchestrate feature development workflow (4-stage process)
 # Usage: ./run.sh [start|advance|status] [args...]

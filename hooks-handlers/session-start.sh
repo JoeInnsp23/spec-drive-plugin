@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # session-start.sh
 # SessionStart hook for spec-drive plugin
 # Injects strict-concise behavior prompt into Claude Code sessions

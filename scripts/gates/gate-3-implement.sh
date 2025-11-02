@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # gate-3-implement.sh
 # Purpose: Quality gate for Implement stage
 # Validates: Tests pass, lint pass, type-check pass, @spec tags present

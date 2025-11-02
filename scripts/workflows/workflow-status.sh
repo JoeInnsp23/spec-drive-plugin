@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # workflow-status.sh
 # Purpose: Display current workflow status
 # Usage: ./workflow-status.sh

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # planning-session.sh
 # Purpose: Non-interactive planning session for app-new workflow
 # Usage: ./planning-session.sh --name <name> --vision <vision> --features <features> --users <users> --stack <stack>

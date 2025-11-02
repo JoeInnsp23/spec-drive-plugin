@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # workflow-engine.sh
 # Purpose: Workflow state machine library for spec-drive
 #

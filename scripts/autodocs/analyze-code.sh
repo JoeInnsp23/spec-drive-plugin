@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # analyze-code.sh
 # Purpose: Analyze codebase and detect components (classes, functions, services)
 # Usage: ./analyze-code.sh [--dir DIR] [--output FILE]

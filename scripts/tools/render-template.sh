@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # render-template.sh
 # Purpose: Template rendering with variable substitution and AUTO marker support
 #

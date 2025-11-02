@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # implement.sh
 # Purpose: Implement stage - guide implementation, check @spec tags
 # Usage: Called automatically by workflow advance

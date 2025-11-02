@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # init-state.sh
 # Purpose: Initialize state.yaml with default runtime state
 

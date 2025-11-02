@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # init-index.sh
 # Purpose: Initialize index.yaml skeleton
 

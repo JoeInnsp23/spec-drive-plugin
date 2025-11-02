@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # scan-spec-tags.sh
 # Purpose: Scan codebase for @spec tags and build traceability map
 # Usage: ./scan-spec-tags.sh [--dir DIR] [--output FILE]

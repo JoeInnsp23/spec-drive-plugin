@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # generate-docs.sh
 # Purpose: Generate initial documentation suite from APP-001 spec
 # Usage: ./generate-docs.sh
@@ -191,11 +191,15 @@ echo -e "${GREEN}✓${NC} Generated $doc_count documents"
 echo -e "${BLUE}Updating SPECS-INDEX...${NC}"
 
 # Build docs array for index using generated docs
-for output in "${GENERATED_DOCS[@]}"; do
-  doc_title=$(basename "$output" .md | sed 's/-/ /g')
-  yq eval ".docs += [{\"file\": \"$output\", \"title\": \"$doc_title\", \"updated\": \"$TIMESTAMP\"}]" \
-    "$INDEX_FILE" -i
-done
+if [[ ${#GENERATED_DOCS[@]} -gt 0 ]]; then
+  for output in "${GENERATED_DOCS[@]}"; do
+    doc_title=$(basename "$output" .md | sed 's/-/ /g')
+    yq eval ".docs += [{\"file\": \"$output\", \"title\": \"$doc_title\", \"updated\": \"$TIMESTAMP\"}]" \
+      "$INDEX_FILE" -i
+  done
+else
+  echo -e "${YELLOW}⚠${NC}  No documents generated to index"
+fi
 
 # Update metadata
 yq eval ".meta.total_docs = (.docs | length) | \

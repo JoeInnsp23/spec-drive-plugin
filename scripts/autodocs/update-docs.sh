@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # update-docs.sh
 # Purpose: Regenerate AUTO sections in documentation from index.yaml
 # Usage: ./update-docs.sh [--dry-run]

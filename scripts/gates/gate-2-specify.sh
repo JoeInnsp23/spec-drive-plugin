@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # gate-2-specify.sh
 # Purpose: Quality gate for Specify stage
 # Validates: Spec structure, acceptance criteria, no clarity markers, API contracts

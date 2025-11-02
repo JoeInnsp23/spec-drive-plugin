@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # update-index.sh
 # Purpose: Populate index.yaml with components, specs, docs, and traces
 # Usage: ./update-index.sh [--output FILE]

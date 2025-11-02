@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # init-docs.sh
 # Purpose: Initialize docs/ directory structure and render templates
 

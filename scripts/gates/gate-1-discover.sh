@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # gate-1-discover.sh
 # Purpose: Quality gate for Discover stage
 # Validates: Requirements documented, understanding confirmed
