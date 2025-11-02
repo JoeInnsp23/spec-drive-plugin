@@ -162,6 +162,38 @@ else
 fi
 
 # ==============================================================================
+# Archive Development Work to Completed
+# ==============================================================================
+
+echo ""
+echo -e "${BLUE}Archiving development work...${NC}"
+
+DEV_CURRENT_DIR="$SPEC_DRIVE_DIR/development/current/$SPEC_ID"
+DEV_COMPLETED_DIR="$SPEC_DRIVE_DIR/development/completed"
+
+if [[ -d "$DEV_CURRENT_DIR" ]]; then
+  mkdir -p "$DEV_COMPLETED_DIR"
+
+  # Add completion timestamp to directory name
+  COMPLETION_DATE=$(date -u +%Y%m%d)
+  TARGET_DIR="$DEV_COMPLETED_DIR/${SPEC_ID}_${COMPLETION_DATE}"
+
+  # If dir already exists (re-run), add counter
+  if [[ -d "$TARGET_DIR" ]]; then
+    counter=1
+    while [[ -d "${TARGET_DIR}_${counter}" ]]; do
+      counter=$((counter + 1))
+    done
+    TARGET_DIR="${TARGET_DIR}_${counter}"
+  fi
+
+  mv "$DEV_CURRENT_DIR" "$TARGET_DIR"
+  echo -e "${GREEN}✓${NC} Moved: development/current/$SPEC_ID → completed/$(basename "$TARGET_DIR")"
+else
+  echo -e "${YELLOW}⚠${NC}  No development folder found (skipped)"
+fi
+
+# ==============================================================================
 # Complete Workflow
 # ==============================================================================
 

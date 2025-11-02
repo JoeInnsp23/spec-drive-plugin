@@ -171,6 +171,45 @@ EOF
 echo -e "${GREEN}✓${NC} Created APP-001 spec"
 
 # ==============================================================================
+# Create Development Structure for APP-001
+# ==============================================================================
+
+echo -e "${BLUE}Creating development structure...${NC}"
+
+DEV_APP_DIR="$SPEC_DRIVE_DIR/development/current/APP-001"
+mkdir -p "$DEV_APP_DIR/tasks"
+mkdir -p "$DEV_APP_DIR/adr"
+
+# Copy planning templates if available
+TEMPLATES_DIR="$SPEC_DRIVE_DIR/templates/planning"
+if [[ -d "$TEMPLATES_DIR" ]]; then
+  # Copy PRD template
+  if [[ -f "$TEMPLATES_DIR/PRD-TEMPLATE.md" ]]; then
+    cp "$TEMPLATES_DIR/PRD-TEMPLATE.md" "$DEV_APP_DIR/PRD.md"
+    # Replace placeholders
+    sed -i "s/{{SPEC_ID}}/APP-001/g" "$DEV_APP_DIR/PRD.md" 2>/dev/null || true
+    sed -i "s/{{TITLE}}/$PROJECT_NAME Project/g" "$DEV_APP_DIR/PRD.md" 2>/dev/null || true
+    echo -e "${GREEN}✓${NC} Created: $DEV_APP_DIR/PRD.md"
+  fi
+
+  # Copy TDD template
+  if [[ -f "$TEMPLATES_DIR/TDD-TEMPLATE.md" ]]; then
+    cp "$TEMPLATES_DIR/TDD-TEMPLATE.md" "$DEV_APP_DIR/TDD.md"
+    sed -i "s/{{SPEC_ID}}/APP-001/g" "$DEV_APP_DIR/TDD.md" 2>/dev/null || true
+    sed -i "s/{{TITLE}}/$PROJECT_NAME Project/g" "$DEV_APP_DIR/TDD.md" 2>/dev/null || true
+    echo -e "${GREEN}✓${NC} Created: $DEV_APP_DIR/TDD.md"
+  fi
+
+  # Copy TASK template to tasks/
+  if [[ -f "$TEMPLATES_DIR/TASK-TEMPLATE.md" ]]; then
+    cp "$TEMPLATES_DIR/TASK-TEMPLATE.md" "$DEV_APP_DIR/tasks/README.md"
+    echo -e "${GREEN}✓${NC} Created: $DEV_APP_DIR/tasks/README.md"
+  fi
+fi
+
+echo -e "${GREEN}✓${NC} Development structure created"
+
+# ==============================================================================
 # Update SPECS-INDEX.yaml
 # ==============================================================================
 
