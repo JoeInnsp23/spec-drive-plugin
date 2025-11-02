@@ -85,7 +85,12 @@ setup_strict_concise_alias() {
       echo "# spec-drive: claude-sc alias for strict-concise behavior" >> "${RC_FILE}"
       echo "${EXPECTED_ALIAS}" >> "${RC_FILE}"
       log_success "✓ Added claude-sc alias to ${RC_FILE}"
-      log_info "  Run: source ${RC_FILE}  # to activate"
+
+      # Source the rc file to activate in current shell
+      source "${RC_FILE}" 2>/dev/null || true
+
+      log_info "  Alias activated! Use: claude-sc"
+      log_info "  (New shells will pick it up automatically)"
     else
       log_info "✓ Alias setup skipped (not requested)"
     fi
