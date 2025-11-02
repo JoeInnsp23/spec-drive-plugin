@@ -714,7 +714,12 @@ After completing the interview, structure all gathered information as JSON:
      --discovery-json "$(cat /tmp/discovery-data.json)"
    ```
 
-4. **Report Results**
+4. **Cleanup Temp File**
+   ```bash
+   !bash rm -f /tmp/discovery-data.json
+   ```
+
+5. **Report Results**
    - Show user what was created
    - Highlight next steps
    - Note any open questions to resolve
