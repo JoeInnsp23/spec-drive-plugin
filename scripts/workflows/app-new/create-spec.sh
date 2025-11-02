@@ -105,14 +105,17 @@ USERS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_JSON
 echo -e "${BLUE}Processing $USERS_COUNT user types...${NC}"
 
 for ((i=0; i<USERS_COUNT; i++)); do
-  # Extract user data using Python
+  # Extract user data using Python (escape single quotes for bash)
   python3 << EOF >> /tmp/user_${i}.sh
 import json
 user = json.load(open('$TEMP_JSON'))['users'][$i]
-print(f"USER_TYPE='{user.get('type', '')}'")
-print(f"USER_ROLE='{user.get('role_context', '')}'")
-print(f"USER_TECH_LEVEL='{user.get('technical_level', '')}'")
-print(f"USER_INTERACTION='{user.get('interaction_patterns', '')}'")
+# Escape single quotes for bash: ' becomes '\''
+def bash_escape(s):
+    return s.replace("'", "'\\''") if s else ""
+print(f"USER_TYPE='{bash_escape(user.get('type', ''))}'")
+print(f"USER_ROLE='{bash_escape(user.get('role_context', ''))}'")
+print(f"USER_TECH_LEVEL='{bash_escape(user.get('technical_level', ''))}'")
+print(f"USER_INTERACTION='{bash_escape(user.get('interaction_patterns', ''))}'")
 EOF
 
   source /tmp/user_${i}.sh
@@ -141,17 +144,20 @@ FEATURES_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_J
 echo -e "${BLUE}Processing $FEATURES_COUNT features...${NC}"
 
 for ((i=0; i<FEATURES_COUNT; i++)); do
-  # Extract feature data
+  # Extract feature data (escape single quotes for bash)
   python3 << EOF >> /tmp/feature_${i}.sh
 import json
 feature = json.load(open('$TEMP_JSON'))['features'][$i]
-print(f"FEAT_TITLE='{feature.get('title', '')}'")
-print(f"FEAT_DESC='{feature.get('description', '')}'")
-print(f"FEAT_VALUE='{feature.get('user_value', '')}'")
-print(f"FEAT_FLOW='{feature.get('user_flow', '')}'")
-print(f"FEAT_PRIORITY='{feature.get('priority', 'medium')}'")
-print(f"FEAT_COMPLEXITY='{feature.get('complexity', 'moderate')}'")
-print(f"FEAT_MVP='{feature.get('mvp_scope', '')}'")
+# Escape single quotes for bash: ' becomes '\''
+def bash_escape(s):
+    return s.replace("'", "'\\''") if s else ""
+print(f"FEAT_TITLE='{bash_escape(feature.get('title', ''))}'")
+print(f"FEAT_DESC='{bash_escape(feature.get('description', ''))}'")
+print(f"FEAT_VALUE='{bash_escape(feature.get('user_value', ''))}'")
+print(f"FEAT_FLOW='{bash_escape(feature.get('user_flow', ''))}'")
+print(f"FEAT_PRIORITY='{bash_escape(feature.get('priority', 'medium'))}'")
+print(f"FEAT_COMPLEXITY='{bash_escape(feature.get('complexity', 'moderate'))}'")
+print(f"FEAT_MVP='{bash_escape(feature.get('mvp_scope', ''))}'")
 EOF
 
   source /tmp/feature_${i}.sh
@@ -186,14 +192,17 @@ python3 << 'EOF' >> /tmp/tech_stack.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 stack = tech.get('stack', {})
-print(f"TECH_LANG='{stack.get('language', '')}'")
-print(f"TECH_LANG_WHY='{stack.get('language_rationale', '')}'")
-print(f"TECH_FRAMEWORK='{stack.get('framework', '')}'")
-print(f"TECH_FRAMEWORK_WHY='{stack.get('framework_rationale', '')}'")
-print(f"TECH_DB='{stack.get('database', '')}'")
-print(f"TECH_DB_WHY='{stack.get('database_rationale', '')}'")
-print(f"TECH_HOSTING='{stack.get('hosting', '')}'")
-print(f"TECH_HOSTING_WHY='{stack.get('hosting_rationale', '')}'")
+# Escape single quotes for bash: ' becomes '\''
+def bash_escape(s):
+    return s.replace("'", "'\\''") if s else ""
+print(f"TECH_LANG='{bash_escape(stack.get('language', ''))}'")
+print(f"TECH_LANG_WHY='{bash_escape(stack.get('language_rationale', ''))}'")
+print(f"TECH_FRAMEWORK='{bash_escape(stack.get('framework', ''))}'")
+print(f"TECH_FRAMEWORK_WHY='{bash_escape(stack.get('framework_rationale', ''))}'")
+print(f"TECH_DB='{bash_escape(stack.get('database', ''))}'")
+print(f"TECH_DB_WHY='{bash_escape(stack.get('database_rationale', ''))}'")
+print(f"TECH_HOSTING='{bash_escape(stack.get('hosting', ''))}'")
+print(f"TECH_HOSTING_WHY='{bash_escape(stack.get('hosting_rationale', ''))}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_stack.sh
 source /tmp/tech_stack.sh
@@ -219,7 +228,9 @@ python3 << 'EOF' >> /tmp/tech_arch.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 arch = tech.get('architecture', {})
-print(f"ARCH_STYLE='{arch.get('style', '')}'")
+def bash_escape(s):
+    return s.replace("'", "'\\''") if s else ""
+print(f"ARCH_STYLE='{bash_escape(arch.get('style', ''))}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_arch.sh
 source /tmp/tech_arch.sh
@@ -304,12 +315,15 @@ for ((i=0; i<INTEGRATIONS_COUNT; i++)); do
   python3 << EOF >> /tmp/integration_${i}.sh
 import json
 integration = json.load(open('$TEMP_JSON'))['technical']['integrations'][$i]
-print(f"INT_SYSTEM='{integration.get('system', '')}'")
-print(f"INT_PURPOSE='{integration.get('purpose', '')}'")
-print(f"INT_DATA='{integration.get('data_exchanged', '')}'")
-print(f"INT_FREQ='{integration.get('frequency', '')}'")
+# Escape single quotes for bash: ' becomes '\''
+def bash_escape(s):
+    return s.replace("'", "'\\''") if s else ""
+print(f"INT_SYSTEM='{bash_escape(integration.get('system', ''))}'")
+print(f"INT_PURPOSE='{bash_escape(integration.get('purpose', ''))}'")
+print(f"INT_DATA='{bash_escape(integration.get('data_exchanged', ''))}'")
+print(f"INT_FREQ='{bash_escape(integration.get('frequency', ''))}'")
 print(f"INT_API='{str(integration.get('api_available', False)).lower()}'")
-print(f"INT_NOTES='{integration.get('notes', '')}'")
+print(f"INT_NOTES='{bash_escape(integration.get('notes', ''))}'")
 EOF
 
   source /tmp/integration_${i}.sh
