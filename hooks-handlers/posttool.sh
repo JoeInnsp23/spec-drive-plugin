@@ -41,12 +41,13 @@ release_lock() {
   rm -rf "$LOCK_FILE" 2>/dev/null || true
 }
 
-# Ensure lock is always released on exit
-trap release_lock EXIT
+# NOTE: No EXIT trap - traps can cause EPIPE on macOS when they execute after final output
+# Instead, manually call release_lock before each exit point
 
 # Only proceed if we're in a project with spec-drive initialized
 if [[ ! -d "$SPEC_DRIVE_DIR" ]]; then
   # Not a spec-drive project, skip silently
+  release_lock
   cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
@@ -72,6 +73,7 @@ YAML
     release_lock
   else
     # Lock acquisition failed - skip state creation, return success
+    release_lock
     cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
@@ -97,6 +99,9 @@ if [[ "$TOOL_NAME" =~ ^(Write|Edit|Delete)$ ]]; then
   fi
   # If lock acquisition fails, skip silently - don't crash Claude Code
 fi
+
+# Release any held locks before final output
+release_lock
 
 # Always return success - suppress write errors if pipe is broken
 cat << 'EOF' 2>/dev/null || true
