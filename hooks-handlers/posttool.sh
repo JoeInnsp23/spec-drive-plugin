@@ -46,8 +46,7 @@ release_lock() {
 
 # Only proceed if we're in a project with spec-drive initialized
 if [[ ! -d "$SPEC_DRIVE_DIR" ]]; then
-  # Not a spec-drive project, skip silently
-  release_lock
+  # Not a spec-drive project, skip silently (no lock to release)
   cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
@@ -72,8 +71,7 @@ workflows: {}
 YAML
     release_lock
   else
-    # Lock acquisition failed - skip state creation, return success
-    release_lock
+    # Lock acquisition failed - skip state creation, return success (no lock to release)
     cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
@@ -100,12 +98,12 @@ if [[ "$TOOL_NAME" =~ ^(Write|Edit|Delete)$ ]]; then
   # If lock acquisition fails, skip silently - don't crash Claude Code
 fi
 
-# Release any held locks before final output
-release_lock
-
 # Always return success - suppress write errors if pipe is broken
 cat << 'EOF' 2>/dev/null || true
 {
   "hookEventName": "PostToolUse"
 }
 EOF
+
+# CRITICAL: Hooks MUST explicitly exit 0 for success
+exit 0
