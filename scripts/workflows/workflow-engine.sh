@@ -18,7 +18,7 @@
 #   - All functions validate against state-schema.json
 #   - Uses flock for concurrent access protection
 
-set -euo pipefail
+set -eo pipefail
 
 # Constants
 SPEC_DRIVE_DIR="${SPEC_DRIVE_DIR:-.spec-drive}"
@@ -33,6 +33,9 @@ declare -A STAGE_NEXT=(
   ["implement"]="verify"
   ["verify"]="done"
 )
+
+# Enable unbound variable check AFTER associative array declaration
+set -u
 
 # Utility: Acquire file lock
 acquire_lock() {
