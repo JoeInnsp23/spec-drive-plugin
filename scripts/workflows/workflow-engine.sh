@@ -19,8 +19,7 @@
 #   - Uses flock for concurrent access protection
 
 # Note: This file is sourced, not executed directly
-# Don't use 'set -u' in sourced files with associative arrays
-# as it can cause issues across different bash versions
+# Compatible with bash 3.2+ (macOS default bash)
 set -eo pipefail
 
 # Constants
@@ -29,13 +28,18 @@ STATE_FILE="$SPEC_DRIVE_DIR/state.yaml"
 STATE_SCHEMA="$SPEC_DRIVE_DIR/schemas/v0.1/state-schema.json"
 LOCK_FILE="$SPEC_DRIVE_DIR/.state.lock"
 
-# Stage progression map
-declare -A STAGE_NEXT=(
-  ["discover"]="specify"
-  ["specify"]="implement"
-  ["implement"]="verify"
-  ["verify"]="done"
-)
+# Stage progression function (bash 3.2+ compatible)
+# Returns next stage for a given current stage
+get_next_stage() {
+  local current="$1"
+  case "$current" in
+    discover)  echo "specify" ;;
+    specify)   echo "implement" ;;
+    implement) echo "verify" ;;
+    verify)    echo "done" ;;
+    *)         echo "" ;;
+  esac
+}
 
 # Utility: Acquire file lock
 acquire_lock() {
@@ -138,7 +142,7 @@ workflow_advance() {
 
   # Get current stage
   local current_stage=$(yq eval '.current_stage' "$STATE_FILE")
-  local next_stage="${STAGE_NEXT[$current_stage]}"
+  local next_stage=$(get_next_stage "$current_stage")
 
   if [[ -z "$next_stage" ]]; then
     echo "❌ ERROR: Unknown stage: $current_stage" >&2
