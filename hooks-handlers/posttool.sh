@@ -3,8 +3,8 @@
 # PostToolUse hook for spec-drive plugin
 # Sets dirty flag when code/docs are modified
 
-# NOTE: Don't use 'set -e' in hooks - we must always return success to avoid crashing Claude Code
-set -o pipefail
+# NOTE: Don't use ANY error flags in hooks - we must always return success to avoid crashing Claude Code
+# NO set -e, NO set -o pipefail - hooks must be bulletproof
 
 # Hook receives tool information via environment variables:
 # - TOOL_NAME: Name of the tool that was used (Write, Edit, Delete, etc.)
