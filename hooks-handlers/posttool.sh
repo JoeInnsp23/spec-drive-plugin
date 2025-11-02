@@ -27,8 +27,8 @@ acquire_lock() {
       # Lock acquisition failed - return failure but don't crash
       return 1
     fi
-    sleep 0.1
-    waited=$((waited + 1))
+    sleep 0.1 2>/dev/null || true
+    waited=$((waited + 1)) || true
   done
 
   # Store PID for debugging
@@ -60,8 +60,9 @@ if [[ ! -f "$STATE_FILE" ]]; then
   # Try to acquire lock (short timeout)
   if acquire_lock; then
     # Create full state schema matching workflow-engine.sh expectations
-    mkdir -p "$SPEC_DRIVE_DIR"
-    cat > "$STATE_FILE" << 'YAML'
+    mkdir -p "$SPEC_DRIVE_DIR" 2>/dev/null || true
+    {
+      cat > "$STATE_FILE" << 'YAML'
 current_workflow: null
 current_stage: null
 current_spec: null
@@ -69,6 +70,7 @@ can_advance: false
 dirty: false
 workflows: {}
 YAML
+    } 2>/dev/null || true
     release_lock
   else
     # Lock acquisition failed - skip state creation, return success (no lock to release)
@@ -82,7 +84,7 @@ EOF
 fi
 
 # Set dirty flag for Write/Edit/Delete tools
-if [[ "$TOOL_NAME" =~ ^(Write|Edit|Delete)$ ]]; then
+if [[ -n "${TOOL_NAME:-}" ]] && [[ "$TOOL_NAME" =~ ^(Write|Edit|Delete)$ ]]; then
   # Try to acquire lock
   if acquire_lock; then
     # Use yq to set dirty flag
