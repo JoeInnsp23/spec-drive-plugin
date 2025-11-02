@@ -1,30 +1,35 @@
 ---
 name: project-discovery
-description: "Conducts comprehensive discovery interviews for new software projects using AskUserQuestion tool and conversational follow-ups. This skill should be used when initializing new projects via /spec-drive:app-new. Guides through structured 6-phase discovery process to gather project context, user needs, features, technical requirements, constraints, and success criteria."
+description: "Conducts comprehensive discovery interviews for new software projects. This skill should be used when initializing new projects via /spec-drive:app-new. Guides through structured 6-phase discovery to gather project context, user needs, features, technical requirements, constraints, and success criteria using AskUserQuestion tool and conversational follow-ups."
 allowed-tools: AskUserQuestion, Write, Bash, Read
 ---
 
 # Project Discovery Skill
 
-**Purpose:** Guide comprehensive discovery interview for new software projects, gathering all context needed to generate rich specifications and documentation.
+## Purpose
 
-**When to Use:** Automatically invoked during `/spec-drive:app-new` workflow initialization.
+Conduct comprehensive discovery interviews for new software projects, gathering all context needed to generate rich specifications and documentation.
 
-**Duration:** 30-45 minutes for thorough discovery
+## When to Use
 
-**Output:** Structured JSON containing all project context, which generates comprehensive YAML specs and AI-navigable index.
+Automatically invoke during `/spec-drive:app-new` workflow initialization.
+
+## Duration
+
+30-45 minutes for thorough discovery.
+
+## Output
+
+Structured JSON containing all project context, which generates comprehensive YAML specs and AI-navigable index.
 
 ---
 
-## Discovery Interview Framework
+## Discovery Process
 
-### Overview
+Conduct a 6-phase interview combining structured questions (via AskUserQuestion tool) with conversational follow-ups for deeper exploration.
 
-This skill guides through a **6-phase discovery interview** designed to uncover the full context of a new software project. Each phase combines:
-- **AskUserQuestion tool** for structured data collection
-- **Conversational follow-ups** for deeper exploration
+### Interview Principles
 
-**Interview Principles:**
 - **Ask "why"** - Uncover motivations and value, not just features
 - **Be curious** - Follow interesting threads, explore edge cases
 - **Validate assumptions** - Confirm understanding with user
@@ -37,58 +42,29 @@ This skill guides through a **6-phase discovery interview** designed to uncover 
 
 **Goal:** Understand the project at a high level - what, why, and success criteria.
 
-### Tool Usage
+### Questions to Ask
 
-Start with AskUserQuestion for basic info:
+Use AskUserQuestion tool to get the project name (single question with header "Name", one option "Enter manually").
 
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "What is the name of your project?",
-      header: "Name",
-      options: [
-        {label: "Enter manually", description: "Type project name"}
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
-
-### Core Questions (via conversation)
-
-1. **What are you building?**
-   - Get 1-2 sentence description
-   - Ask for project name (if not already provided)
-
-2. **Why are you building it?**
-   - What problem does it solve?
-   - What gap in the market/workflow?
-   - What sparked this idea?
-
-3. **What does success look like?**
-   - How will you know it's working?
-   - What metrics matter?
-   - What's the ultimate goal?
+Then ask conversationally:
+- "What are you building?" (1-2 sentence description)
+- "Why are you building it? What problem does it solve?"
+- "What sparked this idea?" (inspiration/motivation)
+- "How will you measure success? What metrics matter?"
 
 ### Follow-Up Prompts
 
 - "Can you give me a concrete example of this problem in action?"
 - "What happens if this doesn't exist - what's the workaround?"
 - "Is this replacing something existing, or entirely new?"
-- "What inspired this - personal pain point, market research, client request?"
 
 ### Data to Capture
 
-```yaml
-project:
-  name: string
-  vision: string (1-2 sentences)
-  problem_statement: string
-  inspiration: string
-  success_metrics: [strings]
-```
+- project.name
+- project.vision (1-2 sentences)
+- project.problem_statement
+- project.inspiration
+- project.success_metrics (array)
 
 ---
 
@@ -96,62 +72,38 @@ project:
 
 **Goal:** Deeply understand WHO will use this and WHY they need it.
 
-### Core Questions (via conversation)
+### Questions to Ask
 
-1. **Who will use this?**
-   - List all user types/personas
-   - For each: "What's their role/context?"
+Start conversationally:
+- "Who will use this? List all user types/personas"
 
-2. **For EACH user type, explore:**
-   - **Goals:** "What are they trying to accomplish?"
-   - **Pain Points:** "What frustrates them today?"
-   - **Needs:** "What do they need from this tool?"
-   - **Interaction:** "How/when/where will they use this?"
-   - **Skills:** "What's their technical level?"
+For EACH user type identified, ask:
+- "What is their role/context?"
+- "What are they trying to accomplish?" (goals)
+- "What frustrates them today?" (pain points)
+- "What do they need from this tool?" (needs)
+- "How/when/where will they use this?" (interaction patterns)
+- "What alternatives are they using now?"
 
-### Tool Usage (for technical level)
-
-For each user type, use AskUserQuestion:
-
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "What is the technical skill level of [USER_TYPE]?",
-      header: "Tech Level",
-      options: [
-        {label: "Beginner", description: "Non-technical, needs simple UI"},
-        {label: "Intermediate", description: "Some technical knowledge"},
-        {label: "Advanced", description: "Comfortable with CLIs/APIs"},
-        {label: "Expert", description: "Developer/power user"}
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
+Then use AskUserQuestion tool for each user type's technical level (header "Tech Level", options: Beginner/Intermediate/Advanced/Expert with descriptions).
 
 ### Follow-Up Prompts
 
 - "Walk me through a typical day for this user - where does your tool fit?"
-- "What alternatives are they using now? Why insufficient?"
 - "What would delight this user? What would frustrate them?"
-- "How tech-savvy are they? CLI comfortable? API familiar?"
 - "Are there conflicts between different user types' needs?"
 
 ### Data to Capture
 
-```yaml
-users:
-  - type: string
-    role_context: string
-    goals: [strings]
-    pain_points: [strings]
-    needs: [strings]
-    interaction_patterns: string
-    technical_level: string (beginner|intermediate|advanced|expert)
-    current_alternatives: [strings]
-```
+For each user:
+- users[].type
+- users[].role_context
+- users[].goals (array)
+- users[].pain_points (array)
+- users[].needs (array)
+- users[].interaction_patterns
+- users[].technical_level
+- users[].current_alternatives (array)
 
 ---
 
@@ -159,86 +111,54 @@ users:
 
 **Goal:** Understand WHAT to build - features, workflows, and priorities.
 
-### Core Questions (via conversation)
+### Questions to Ask
 
-1. **What are the key features?**
-   - List 5-10 core features
-   - Get rough priority (critical, high, medium, nice-to-have)
+Start conversationally:
+- "What are the key features? List 5-10 core features"
 
-2. **For EACH feature (especially critical/high):**
-   - **Why important?** "What user value does this deliver?"
-   - **What does it do?** "Describe the functionality"
-   - **How does it work?** "Walk me through the user flow"
-   - **Complexity?** "Simple, moderate, or complex?"
-   - **Dependencies?** "What does this depend on?"
-   - **Risks?** "What could go wrong?"
+For EACH feature identified, use AskUserQuestion tool twice:
+1. Priority question (header "Priority", options: Critical/High/Medium/Nice-to-have with descriptions)
+2. Complexity question (header "Complexity", options: Simple/Moderate/Complex with descriptions)
 
-### Tool Usage (for priority & complexity)
-
-For each feature, use AskUserQuestion:
-
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "What is the priority of '[FEATURE_NAME]'?",
-      header: "Priority",
-      options: [
-        {label: "Critical", description: "Must have for MVP, blocks everything"},
-        {label: "High", description: "Important for MVP, high user value"},
-        {label: "Medium", description: "Nice to have in MVP, can defer"},
-        {label: "Nice-to-have", description: "Future enhancement"}
-      ],
-      multiSelect: false
-    },
-    {
-      question: "What is the complexity of '[FEATURE_NAME]'?",
-      header: "Complexity",
-      options: [
-        {label: "Simple", description: "Straightforward, low risk"},
-        {label: "Moderate", description: "Some complexity, manageable"},
-        {label: "Complex", description: "High complexity, significant effort"}
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
+Then ask conversationally for each feature:
+- "Why is this feature important? What user value does it deliver?"
+- "Describe the functionality"
+- "Walk me through the user flow step-by-step"
+- "What does this feature depend on?"
+- "What could go wrong? Any risks?"
+- "Any edge cases to consider?"
 
 ### Follow-Up Prompts
 
 - "Can you show me a concrete example of using this feature?"
 - "What happens if this feature fails - how critical is it?"
-- "Are there edge cases we should consider?"
 - "Does this feature integrate with anything external?"
 - "What's the simplest version of this (MVP)?"
 - "What would the 'deluxe' version include?"
 
 ### Feature Categories to Probe
 
-- **Core workflows** (critical path)
-- **Data management** (CRUD, import/export)
-- **User management** (auth, permissions)
-- **Integration** (APIs, webhooks, third-party)
-- **Reporting/analytics** (dashboards, exports)
-- **Admin/ops** (config, monitoring, logs)
+- Core workflows (critical path)
+- Data management (CRUD, import/export)
+- User management (auth, permissions)
+- Integration (APIs, webhooks, third-party)
+- Reporting/analytics (dashboards, exports)
+- Admin/ops (config, monitoring, logs)
 
 ### Data to Capture
 
-```yaml
-features:
-  - title: string
-    description: string
-    user_value: string (the "why")
-    user_flow: string (step-by-step)
-    priority: string (critical|high|medium|nice-to-have)
-    complexity: string (simple|moderate|complex)
-    dependencies: [strings]
-    risks: [strings]
-    edge_cases: [strings]
-    mvp_scope: string
-    future_enhancements: [strings]
-```
+For each feature:
+- features[].title
+- features[].description
+- features[].user_value (the "why")
+- features[].user_flow (step-by-step)
+- features[].priority
+- features[].complexity
+- features[].dependencies (array)
+- features[].risks (array)
+- features[].edge_cases (array)
+- features[].mvp_scope
+- features[].future_enhancements (array)
 
 ---
 
@@ -246,142 +166,58 @@ features:
 
 **Goal:** Understand technical stack, architecture, constraints, and integration needs.
 
-### Tool Usage (for tech stack)
+### Questions to Ask
 
-Use AskUserQuestion for core tech choices:
+Use AskUserQuestion tool to ask three tech stack questions in one call:
+1. Language (header "Language", options: TypeScript/Python/Go/Rust/Java with descriptions)
+2. Framework (header "Framework", options: Next.js/FastAPI/Express/Django/Spring Boot with descriptions)
+3. Database (header "Database", options: PostgreSQL/MongoDB/MySQL/SQLite/Redis with descriptions)
 
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "What programming language will you use?",
-      header: "Language",
-      options: [
-        {label: "TypeScript", description: "Type-safe JavaScript"},
-        {label: "Python", description: "General purpose, data science"},
-        {label: "Go", description: "Fast, concurrent"},
-        {label: "Rust", description: "Safe, performant"},
-        {label: "Java", description: "Enterprise, JVM ecosystem"}
-      ],
-      multiSelect: false
-    },
-    {
-      question: "What framework will you use?",
-      header: "Framework",
-      options: [
-        {label: "Next.js", description: "React with SSR"},
-        {label: "FastAPI", description: "Modern Python API"},
-        {label: "Express", description: "Minimal Node.js"},
-        {label: "Django", description: "Full Python framework"},
-        {label: "Spring Boot", description: "Java enterprise"}
-      ],
-      multiSelect: false
-    },
-    {
-      question: "What database will you use?",
-      header: "Database",
-      options: [
-        {label: "PostgreSQL", description: "Relational, ACID"},
-        {label: "MongoDB", description: "Document, flexible schema"},
-        {label: "MySQL", description: "Popular relational"},
-        {label: "SQLite", description: "Lightweight, embedded"},
-        {label: "Redis", description: "In-memory cache"}
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
-
-### Core Questions (via conversation)
-
-1. **Tech Stack Rationale**
-   - "Why did you choose [LANGUAGE]?"
-   - "Why [FRAMEWORK]?"
-   - "Why [DATABASE]?"
-
-2. **Architecture**
-   - "What's the high-level architecture?" (monolith, microservices, serverless, etc.)
-   - "Any architectural constraints or requirements?"
-   - "Any compliance needs?" (HIPAA, SOC2, GDPR, etc.)
-
-3. **Data & Storage**
-   - "What data needs to be stored?"
-   - "How much data? Scale expectations?"
-   - "Any sensitive/PII data?"
-   - "Backup/disaster recovery needs?"
-
-4. **Authentication & Authorization**
-   - "Who can access what?"
-   - "Auth approach?" (email/password, OAuth, SSO, API keys, etc.)
-   - "Role-based permissions needed?"
-
-5. **Integrations**
-   - "Does this need to integrate with other systems?"
-   - **For each:** "What's exchanged? How often? APIs available?"
-   - "Any webhooks or real-time data?"
-
-6. **Infrastructure**
-   - "Where will this run?" (cloud provider, on-prem, hybrid)
-   - "Any DevOps/CI-CD preferences?"
-   - "Monitoring/observability needs?"
+Then ask conversationally:
+- "Why did you choose [LANGUAGE]?"
+- "Why [FRAMEWORK]?"
+- "Why [DATABASE]?"
+- "What's the high-level architecture?" (monolith/microservices/serverless)
+- "Any architectural constraints or compliance requirements?" (HIPAA, SOC2, GDPR)
+- "What data needs to be stored? Any sensitive/PII data?"
+- "Expected scale - users, data volume, traffic?"
+- "Authentication approach?" (OAuth, JWT, email/password, SSO)
+- "Any role-based permissions needed? What roles?"
+- "Does this integrate with other systems? Which ones and how?"
+- "Where will this run?" (cloud provider, on-prem)
+- "Any performance requirements?"
 
 ### Follow-Up Prompts
 
 - "Have you used this stack before, or is it new?"
-- "Any performance requirements (response time, throughput)?"
-- "Expected scale - users, data volume, traffic?"
 - "Any legacy systems to work with?"
 - "Any vendor lock-in concerns?"
 - "What about offline/degraded mode?"
 
 ### Data to Capture
 
-```yaml
-technical:
-  stack:
-    language: string
-    language_rationale: string
-    framework: string
-    framework_rationale: string
-    database: string
-    database_rationale: string
-    hosting: string
-    hosting_rationale: string
-    other_tools: [strings]
-
-  architecture:
-    style: string (monolith|microservices|serverless|hybrid)
-    architectural_constraints: [strings]
-    compliance_requirements: [strings]
-
-  data:
-    storage_needs: [strings]
-    scale_expectations: string
-    sensitive_data: boolean
-    sensitive_data_types: [strings]
-    backup_requirements: string
-
-  auth:
-    approach: string
-    methods: [strings]
-    role_based_access: boolean
-    roles: [strings]
-
-  integrations:
-    - system: string
-      purpose: string
-      data_exchanged: string
-      frequency: string
-      api_available: boolean
-      notes: string
-
-  infrastructure:
-    hosting_platform: string
-    cicd_preference: string
-    monitoring_needs: [strings]
-    performance_requirements: string
-```
+- technical.stack.language, language_rationale
+- technical.stack.framework, framework_rationale
+- technical.stack.database, database_rationale
+- technical.stack.hosting, hosting_rationale
+- technical.stack.other_tools (array)
+- technical.architecture.style
+- technical.architecture.architectural_constraints (array)
+- technical.architecture.compliance_requirements (array)
+- technical.data.storage_needs (array)
+- technical.data.scale_expectations
+- technical.data.sensitive_data (boolean)
+- technical.data.sensitive_data_types (array)
+- technical.data.backup_requirements
+- technical.auth.approach
+- technical.auth.methods (array)
+- technical.auth.role_based_access (boolean)
+- technical.auth.roles (array)
+- technical.integrations[] (system, purpose, data_exchanged, frequency, api_available, notes)
+- technical.infrastructure.hosting_platform
+- technical.infrastructure.cicd_preference
+- technical.infrastructure.monitoring_needs (array)
+- technical.infrastructure.performance_requirements
 
 ---
 
@@ -389,51 +225,20 @@ technical:
 
 **Goal:** Surface limitations, risks, and potential blockers early.
 
-### Tool Usage (for timeline)
+### Questions to Ask
 
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "Do you have a target launch date?",
-      header: "Timeline",
-      options: [
-        {label: "Hard deadline", description: "Must launch by specific date"},
-        {label: "Soft target", description: "Preferred date, flexible"},
-        {label: "No deadline", description: "When it's ready"}
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
+Use AskUserQuestion tool for timeline (header "Timeline", options: Hard deadline/Soft target/No deadline with descriptions).
 
-### Core Questions (via conversation)
-
-1. **Timeline**
-   - "When is the target date?"
-   - "What's driving this timeline?"
-   - "Are there milestones or phases?"
-
-2. **Team**
-   - "Who's working on this?"
-   - "Team size and skills?"
-   - "Any skill gaps?"
-
-3. **Budget**
-   - "Any budget constraints?"
-   - "Infrastructure costs a concern?"
-   - "Third-party service costs?"
-
-4. **Technical Risks**
-   - "What technical unknowns worry you?"
-   - "Any unproven technology choices?"
-   - "Any integration risks?"
-
-5. **Business Risks**
-   - "What could derail this project?"
-   - "What assumptions are we making?"
-   - "What's the biggest uncertainty?"
+Then ask conversationally:
+- "When is the target date?" (if deadline exists)
+- "What's driving this timeline?"
+- "Are there milestones or phases?"
+- "Who's working on this? Team size and roles?"
+- "Any skill gaps on the team?"
+- "Any budget constraints?"
+- "What technical unknowns worry you?"
+- "What could derail this project?"
+- "What's the biggest uncertainty?"
 
 ### Follow-Up Prompts
 
@@ -445,31 +250,17 @@ AskUserQuestion({
 
 ### Data to Capture
 
-```yaml
-constraints:
-  timeline:
-    target_date: string
-    hard_deadline: boolean
-    drivers: [strings]
-    milestones: [strings]
-
-  team:
-    size: number
-    roles: [strings]
-    skill_gaps: [strings]
-
-  budget:
-    constraints: [strings]
-    infrastructure_budget: string
-    service_budget: string
-
-risks:
-  - type: string (technical|business|team|timeline)
-    description: string
-    likelihood: string (low|medium|high)
-    impact: string (low|medium|high)
-    mitigation: string
-```
+- constraints.timeline.target_date
+- constraints.timeline.hard_deadline (boolean)
+- constraints.timeline.drivers (array)
+- constraints.timeline.milestones (array)
+- constraints.team.size
+- constraints.team.roles (array)
+- constraints.team.skill_gaps (array)
+- constraints.budget.constraints (array)
+- constraints.budget.infrastructure_budget
+- constraints.budget.service_budget
+- risks[] (type, description, likelihood, impact, mitigation)
 
 ---
 
@@ -477,44 +268,32 @@ risks:
 
 **Goal:** Define what "done" looks like and future vision.
 
-### Core Questions (via conversation)
+### Questions to Ask
 
-1. **MVP Definition**
-   - "What's the minimum viable product?"
-   - "What can we cut and still deliver value?"
-   - "What must be in v1?"
-
-2. **Success Metrics**
-   - "How will you measure success?"
-   - "What KPIs matter?"
-   - "What would make this a home run?"
-
-3. **Future Vision**
-   - "What's the long-term vision?"
-   - "What comes after MVP?"
-   - "Any blue-sky features for later?"
+Ask conversationally:
+- "What's the minimum viable product? What can you cut and still deliver value?"
+- "What must be in v1?"
+- "How will you measure success? What KPIs?"
+- "What would make this a home run?"
+- "What's the long-term vision?"
+- "What comes after MVP?"
+- "Any blue-sky features for later?"
 
 ### Follow-Up Prompts
 
 - "If you could only ship 3 features, which ones?"
 - "What would make users love this vs. just use it?"
 - "What's the 1-year vision? 3-year?"
-- "How will you know it's time to add more features?"
 
 ### Data to Capture
 
-```yaml
-success:
-  mvp_scope: [strings]
-  must_have_features: [strings]
-  metrics: [strings]
-  definition_of_done: string
-
-  future_vision:
-    long_term_goals: [strings]
-    future_phases: [strings]
-    blue_sky_features: [strings]
-```
+- success.mvp_scope (array)
+- success.must_have_features (array)
+- success.metrics (array)
+- success.definition_of_done
+- success.future_vision.long_term_goals (array)
+- success.future_vision.future_phases (array)
+- success.future_vision.blue_sky_features (array)
 
 ---
 
@@ -531,234 +310,119 @@ success:
 - "What hasn't been discussed yet?"
 
 ### Validate Understanding
-- "Let me summarize what we've covered..."
-- "Does this accurately represent your vision?"
-- "What did I miss?"
+- Summarize periodically: "Let me summarize what we've covered..."
+- Ask: "Does this accurately represent your vision?"
+- Ask: "What did I miss?"
 
 ### Surface Unknowns
-- Track "I don't know" answers → open questions
+- Track "I don't know" answers → add to open_questions
 - Note contradictions or conflicts
 - Identify areas needing research
 
 ### Adaptive Follow-Ups
 - Follow interesting threads
-- Ask for examples when abstract
-- Probe "why" for features/tech choices
+- Ask for concrete examples when user is abstract
+- Always probe "why" for features and tech choices
 - Explore edge cases and failure modes
 
 ---
 
-## Output Format
+## Execution Steps
 
-After completing the interview, structure all gathered information as JSON:
+### 1. Conduct Interview
+
+Work through all 6 phases, using AskUserQuestion tool for structured questions and conversational follow-ups for depth.
+
+Throughout the interview, track:
+- Questions the user couldn't answer (add to open_questions with context and priority)
+- Areas of uncertainty
+- Contradictions or conflicts
+- Technical unknowns requiring research
+
+### 2. Structure Data as JSON
+
+After completing all phases, build a complete JSON object with this structure:
 
 ```json
 {
-  "project": {
-    "name": "string",
-    "vision": "string",
-    "problem_statement": "string",
-    "inspiration": "string",
-    "success_metrics": ["string"]
-  },
-  "users": [
-    {
-      "type": "string",
-      "role_context": "string",
-      "goals": ["string"],
-      "pain_points": ["string"],
-      "needs": ["string"],
-      "interaction_patterns": "string",
-      "technical_level": "string",
-      "current_alternatives": ["string"]
-    }
-  ],
-  "features": [
-    {
-      "title": "string",
-      "description": "string",
-      "user_value": "string",
-      "user_flow": "string",
-      "priority": "string",
-      "complexity": "string",
-      "dependencies": ["string"],
-      "risks": ["string"],
-      "edge_cases": ["string"],
-      "mvp_scope": "string",
-      "future_enhancements": ["string"]
-    }
-  ],
-  "technical": {
-    "stack": {
-      "language": "string",
-      "language_rationale": "string",
-      "framework": "string",
-      "framework_rationale": "string",
-      "database": "string",
-      "database_rationale": "string",
-      "hosting": "string",
-      "hosting_rationale": "string",
-      "other_tools": ["string"]
-    },
-    "architecture": {
-      "style": "string",
-      "architectural_constraints": ["string"],
-      "compliance_requirements": ["string"]
-    },
-    "data": {
-      "storage_needs": ["string"],
-      "scale_expectations": "string",
-      "sensitive_data": false,
-      "sensitive_data_types": ["string"],
-      "backup_requirements": "string"
-    },
-    "auth": {
-      "approach": "string",
-      "methods": ["string"],
-      "role_based_access": false,
-      "roles": ["string"]
-    },
-    "integrations": [
-      {
-        "system": "string",
-        "purpose": "string",
-        "data_exchanged": "string",
-        "frequency": "string",
-        "api_available": true,
-        "notes": "string"
-      }
-    ],
-    "infrastructure": {
-      "hosting_platform": "string",
-      "cicd_preference": "string",
-      "monitoring_needs": ["string"],
-      "performance_requirements": "string"
-    }
-  },
-  "constraints": {
-    "timeline": {
-      "target_date": "string",
-      "hard_deadline": false,
-      "drivers": ["string"],
-      "milestones": ["string"]
-    },
-    "team": {
-      "size": 0,
-      "roles": ["string"],
-      "skill_gaps": ["string"]
-    },
-    "budget": {
-      "constraints": ["string"],
-      "infrastructure_budget": "string",
-      "service_budget": "string"
-    }
-  },
-  "risks": [
-    {
-      "type": "string",
-      "description": "string",
-      "likelihood": "string",
-      "impact": "string",
-      "mitigation": "string"
-    }
-  ],
-  "success": {
-    "mvp_scope": ["string"],
-    "must_have_features": ["string"],
-    "metrics": ["string"],
-    "definition_of_done": "string",
-    "future_vision": {
-      "long_term_goals": ["string"],
-      "future_phases": ["string"],
-      "blue_sky_features": ["string"]
-    }
-  },
-  "open_questions": [
-    {
-      "question": "string",
-      "context": "string",
-      "priority": "string"
-    }
-  ],
+  "project": {...},
+  "users": [{...}],
+  "features": [{...}],
+  "technical": {...},
+  "constraints": {...},
+  "risks": [{...}],
+  "success": {...},
+  "open_questions": [{...}],
   "metadata": {
     "interview_date": "ISO-8601 timestamp",
     "interview_duration_minutes": 0,
     "interviewer": "Claude",
-    "completeness": "string (partial|complete)"
+    "completeness": "complete|partial"
   }
 }
 ```
 
----
+Include all fields captured during the interview. For array fields, include all items gathered. For missing data, use empty arrays or note in open_questions.
 
-## Execution Instructions
+### 3. Validate Data
 
-### After Interview Completion
+Before proceeding, confirm:
+- All 6 phases completed
+- At least 3 user types identified
+- At least 5 features detailed
+- Tech stack choices include rationale (not just selections)
+- Risks identified and assessed
+- MVP scope clearly defined
+- Open questions documented
 
-1. **Validate Data**
-   - Confirm all required fields populated
-   - Check for contradictions or gaps
-   - Review open questions with user
+If time-constrained or user prefers shorter session, mark completeness as "partial" and document what's missing in open_questions.
 
-2. **Write Discovery JSON**
-   ```javascript
-   Write({
-     file_path: "/tmp/discovery-data.json",
-     content: "<json-string>"
-   })
-   ```
+### 4. Write JSON to Temp File
 
-3. **Run Initialization Script**
-   ```bash
-   !bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/app-new/run.sh \
-     --discovery-json "$(cat /tmp/discovery-data.json)"
-   ```
+Use Write tool to save the JSON:
+- file_path: "/tmp/discovery-data.json"
+- content: the complete JSON string
 
-4. **Cleanup Temp File**
-   ```bash
-   !bash rm -f /tmp/discovery-data.json
-   ```
+### 5. Run Initialization Script
 
-5. **Report Results**
-   - Show user what was created
-   - Highlight next steps
-   - Note any open questions to resolve
+Use Bash tool to run:
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/workflows/app-new/run.sh --discovery-json "$(cat /tmp/discovery-data.json)"
+```
 
----
+### 6. Cleanup Temp File
 
-## Quality Gates
+Use Bash tool to delete:
+```bash
+rm -f /tmp/discovery-data.json
+```
 
-**Before running script, confirm:**
-- [ ] All 6 phases completed
-- [ ] At least 3 user types identified
-- [ ] At least 5 features detailed
-- [ ] Tech stack justified (not just listed)
-- [ ] Risks identified and assessed
-- [ ] MVP scope clearly defined
-- [ ] Open questions documented
+### 7. Report Results
 
-**Incomplete discovery:**
-If time-constrained or user prefers shorter session, document what's missing in `open_questions` and note `completeness: "partial"` in metadata.
+Show the user:
+- What was created (spec, index, workspace)
+- Next steps (review spec, resolve open questions, advance workflow)
+- Any open questions that need resolution
 
 ---
 
 ## Tips for Success
 
-1. **Take your time** - Don't rush through phases
-2. **Ask for examples** - Concrete beats abstract
+1. **Take time** - Don't rush through phases; thorough discovery prevents rework
+2. **Ask for examples** - Concrete examples beat abstract descriptions
 3. **Explore the "why"** - Motivations matter more than features
-4. **Surface tensions** - Conflicting needs? Timeline vs. scope?
-5. **Document unknowns** - "I don't know" is valid, track it
-6. **Validate often** - Summarize and confirm understanding
+4. **Surface tensions** - Identify conflicting needs or unrealistic timelines
+5. **Document unknowns** - "I don't know" is valid; track it
+6. **Validate often** - Summarize and confirm understanding throughout
 7. **Stay curious** - Follow interesting threads
-8. **Think like an architect** - How does this all fit together?
+8. **Think like an architect** - Consider how everything fits together
 
 ---
 
 ## Common Pitfalls to Avoid
 
 - **Feature-focused only** - Don't skip users, constraints, risks
-- **Assuming user context** - Always ask about user goals/pain points
+- **Assuming user context** - Always ask about user goals and pain points
 - **Tech stack without rationale** - Always ask "why this choice?"
 - **Ignoring risks** - Surface uncertainties early
 - **Vague success criteria** - Push for specific, measurable metrics
@@ -768,56 +432,45 @@ If time-constrained or user prefers shorter session, document what's missing in 
 
 ## Example Interview Flow
 
-```
-You: Let's start with the big picture. What are you building?
+Start: "Let's conduct a comprehensive discovery for your project. This will take 30-45 minutes. We'll cover project context, users, features, technical details, constraints, and success criteria. Ready to begin?"
 
-User: A task management app for developers
+Phase 1: "Let's start with the big picture. What are you building?"
+→ Follow with why, inspiration, success metrics
 
-You: Interesting! Why are you building this - what problem does it solve?
+Phase 2: "Great! Now who will use this?"
+→ For each user type, explore goals, pain points, needs, technical level
 
-User: Existing tools don't integrate with git workflows
+Phase 3: "What are the key features?"
+→ For each feature, get priority/complexity (AskUserQuestion), then explore value, flow, risks
 
-You: Can you give me a concrete example of that frustration?
+Phase 4: "Let's talk technical details. What tech stack?"
+→ Use AskUserQuestion for language/framework/database, then explore rationale, architecture, integrations
 
-User: [explains git issue tracking pain point]
+Phase 5: "What constraints and risks should we consider?"
+→ Use AskUserQuestion for timeline, then explore team, budget, risks
 
-You: What does success look like for this tool?
+Phase 6: "Finally, what does success look like?"
+→ Explore MVP, metrics, future vision
 
-User: [describes metrics]
+Validate: "Let me summarize everything we've covered..."
+→ Confirm understanding, fill gaps
 
-You: Great! Now let's talk about who will use this. What types of users?
-
-User: Individual developers and team leads
-
-You: Let's start with individual developers. What are their goals when using this?
-
-[Continue through all 6 phases, using AskUserQuestion for structured data and conversation for exploration...]
-
-You: Let me summarize what we've covered to make sure I have it right...
-[Validate understanding]
-
-You: What did I miss or get wrong?
-
-[Final adjustments]
-
-You: Perfect! I'll now generate the comprehensive project spec based on everything we discussed.
-
-[Write JSON, run script]
-```
+Execute: Build JSON, write to file, run script, cleanup, report results
 
 ---
 
 ## Next Steps After Discovery
 
-The initialization script will:
-1. Generate comprehensive APP-001 spec with all discovery context
-2. Create AI-navigable index for project
-3. Initialize development workspace
-4. Set workflow state to "discover" stage
-5. Provide user with next steps
+The initialization script creates:
+1. Comprehensive APP-001 spec with all discovery context
+2. AI-navigable index for project navigation
+3. Development workspace with planning docs
+4. Workflow state set to "discover" stage
 
-**User can then:**
-- Review generated spec
-- Add/refine acceptance criteria
+The user should then:
+- Review generated spec (.spec-drive/specs/APP-001.yaml)
+- Check AI index (.spec-drive/index.yaml)
+- Review workspace (.spec-drive/development/current/APP-001/)
+- Resolve any open questions documented
 - Advance to "specify" stage when ready
 - Begin feature development
