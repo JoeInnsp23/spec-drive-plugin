@@ -106,7 +106,7 @@ echo -e "${BLUE}Processing $USERS_COUNT user types...${NC}"
 
 for ((i=0; i<USERS_COUNT; i++)); do
   # Extract user data using Python (escape for bash)
-  python3 << EOF >> /tmp/user_${i}.sh
+  python3 << EOF > /tmp/user_${i}.sh
 import json
 user = json.load(open('$TEMP_JSON'))['users'][$i]
 # Escape for bash: remove newlines, escape single quotes
@@ -151,7 +151,7 @@ echo -e "${BLUE}Processing $FEATURES_COUNT features...${NC}"
 
 for ((i=0; i<FEATURES_COUNT; i++)); do
   # Extract feature data (escape for bash)
-  python3 << EOF >> /tmp/feature_${i}.sh
+  python3 << EOF > /tmp/feature_${i}.sh
 import json
 feature = json.load(open('$TEMP_JSON'))['features'][$i]
 # Escape for bash: remove newlines, escape single quotes
@@ -198,7 +198,7 @@ echo -e "${GREEN}✓${NC} Added $FEATURES_COUNT features"
 echo -e "${BLUE}Adding technical context...${NC}"
 
 # Stack
-python3 << 'EOF' >> /tmp/tech_stack.sh
+python3 << 'EOF' > /tmp/tech_stack.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 stack = tech.get('stack', {})
@@ -238,7 +238,7 @@ for ((i=0; i<TOOLS_COUNT; i++)); do
 done
 
 # Architecture
-python3 << 'EOF' >> /tmp/tech_arch.sh
+python3 << 'EOF' > /tmp/tech_arch.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 arch = tech.get('architecture', {})
@@ -270,13 +270,20 @@ for ((i=0; i<COMPLIANCE_COUNT; i++)); do
 done
 
 # Data
-python3 << 'EOF' >> /tmp/tech_data.sh
+python3 << 'EOF' > /tmp/tech_data.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 data = tech.get('data', {})
-print(f"DATA_SCALE='{data.get('scale_expectations', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"DATA_SCALE='{bash_escape(data.get('scale_expectations', ''))}'")
 print(f"DATA_SENSITIVE='{str(data.get('sensitive_data', False)).lower()}'")
-print(f"DATA_BACKUP='{data.get('backup_requirements', '')}'")
+print(f"DATA_BACKUP='{bash_escape(data.get('backup_requirements', ''))}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_data.sh
 source /tmp/tech_data.sh
@@ -300,11 +307,18 @@ for ((i=0; i<SENSITIVE_COUNT; i++)); do
 done
 
 # Auth
-python3 << 'EOF' >> /tmp/tech_auth.sh
+python3 << 'EOF' > /tmp/tech_auth.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 auth = tech.get('auth', {})
-print(f"AUTH_APPROACH='{auth.get('approach', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"AUTH_APPROACH='{bash_escape(auth.get('approach', ''))}'")
 print(f"AUTH_RBAC='{str(auth.get('role_based_access', False)).lower()}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_auth.sh
@@ -330,7 +344,7 @@ done
 # Integrations
 INTEGRATIONS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_JSON'))['technical'].get('integrations', [])))")
 for ((i=0; i<INTEGRATIONS_COUNT; i++)); do
-  python3 << EOF >> /tmp/integration_${i}.sh
+  python3 << EOF > /tmp/integration_${i}.sh
 import json
 integration = json.load(open('$TEMP_JSON'))['technical']['integrations'][$i]
 # Escape for bash: remove newlines, escape single quotes
@@ -361,13 +375,20 @@ EOF
 done
 
 # Infrastructure
-python3 << 'EOF' >> /tmp/tech_infra.sh
+python3 << 'EOF' > /tmp/tech_infra.sh
 import json
 tech = json.load(open('$TEMP_JSON'))['technical']
 infra = tech.get('infrastructure', {})
-print(f"INFRA_PLATFORM='{infra.get('hosting_platform', '')}'")
-print(f"INFRA_CICD='{infra.get('cicd_preference', '')}'")
-print(f"INFRA_PERF='{infra.get('performance_requirements', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"INFRA_PLATFORM='{bash_escape(infra.get('hosting_platform', ''))}'")
+print(f"INFRA_CICD='{bash_escape(infra.get('cicd_preference', ''))}'")
+print(f"INFRA_PERF='{bash_escape(infra.get('performance_requirements', ''))}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/tech_infra.sh
 source /tmp/tech_infra.sh
@@ -390,14 +411,21 @@ echo -e "${GREEN}✓${NC} Added technical context"
 # Add constraints
 echo -e "${BLUE}Adding constraints...${NC}"
 
-python3 << 'EOF' >> /tmp/constraints.sh
+python3 << 'EOF' > /tmp/constraints.sh
 import json
 constraints = json.load(open('$TEMP_JSON')).get('constraints', {})
 timeline = constraints.get('timeline', {})
 team = constraints.get('team', {})
 budget = constraints.get('budget', {})
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
 
-print(f"TIMELINE_DATE='{timeline.get('target_date', '')}'")
+print(f"TIMELINE_DATE='{bash_escape(timeline.get('target_date', ''))}'")
 print(f"TIMELINE_HARD='{str(timeline.get('hard_deadline', False)).lower()}'")
 print(f"TEAM_SIZE='{team.get('size', 0)}'")
 EOF
@@ -443,12 +471,19 @@ for ((i=0; i<BUDGET_CONSTRAINTS_COUNT; i++)); do
   yq eval -i ".constraints.budget.constraints[$i] = \"$CONSTRAINT\"" "$TEMP_YAML"
 done
 
-python3 << 'EOF' >> /tmp/budget.sh
+python3 << 'EOF' > /tmp/budget.sh
 import json
 constraints = json.load(open('$TEMP_JSON')).get('constraints', {})
 budget = constraints.get('budget', {})
-print(f"BUDGET_INFRA='{budget.get('infrastructure_budget', '')}'")
-print(f"BUDGET_SERVICE='{budget.get('service_budget', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"BUDGET_INFRA='{bash_escape(budget.get('infrastructure_budget', ''))}'")
+print(f"BUDGET_SERVICE='{bash_escape(budget.get('service_budget', ''))}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/budget.sh
 source /tmp/budget.sh
@@ -465,14 +500,21 @@ RISKS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_JSON
 echo -e "${BLUE}Processing $RISKS_COUNT risks...${NC}"
 
 for ((i=0; i<RISKS_COUNT; i++)); do
-  python3 << EOF >> /tmp/risk_${i}.sh
+  python3 << EOF > /tmp/risk_${i}.sh
 import json
 risk = json.load(open('$TEMP_JSON'))['risks'][$i]
-print(f"RISK_TYPE='{risk.get('type', '')}'")
-print(f"RISK_DESC='{risk.get('description', '')}'")
-print(f"RISK_LIKELIHOOD='{risk.get('likelihood', '')}'")
-print(f"RISK_IMPACT='{risk.get('impact', '')}'")
-print(f"RISK_MITIGATION='{risk.get('mitigation', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"RISK_TYPE='{bash_escape(risk.get('type', ''))}'")
+print(f"RISK_DESC='{bash_escape(risk.get('description', ''))}'")
+print(f"RISK_LIKELIHOOD='{bash_escape(risk.get('likelihood', ''))}'")
+print(f"RISK_IMPACT='{bash_escape(risk.get('impact', ''))}'")
+print(f"RISK_MITIGATION='{bash_escape(risk.get('mitigation', ''))}'")
 EOF
 
   source /tmp/risk_${i}.sh
@@ -491,10 +533,17 @@ echo -e "${GREEN}✓${NC} Added $RISKS_COUNT risks"
 # Add success criteria
 echo -e "${BLUE}Adding success criteria...${NC}"
 
-python3 << 'EOF' >> /tmp/success.sh
+python3 << 'EOF' > /tmp/success.sh
 import json
 success = json.load(open('$TEMP_JSON')).get('success', {})
-print(f"SUCCESS_DOD='{success.get('definition_of_done', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"SUCCESS_DOD='{bash_escape(success.get('definition_of_done', ''))}'")
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/success.sh
 source /tmp/success.sh
@@ -523,10 +572,17 @@ for ((i=0; i<METRICS_COUNT; i++)); do
 done
 
 # Future vision
-python3 << 'EOF' >> /tmp/vision.sh
+python3 << 'EOF' > /tmp/vision.sh
 import json
 success = json.load(open('$TEMP_JSON')).get('success', {})
 vision = success.get('future_vision', {})
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
 EOF
 sed -i "s/\$TEMP_JSON/$TEMP_JSON/g" /tmp/vision.sh
 source /tmp/vision.sh
@@ -561,12 +617,19 @@ QUESTIONS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_
 echo -e "${BLUE}Processing $QUESTIONS_COUNT open questions...${NC}"
 
 for ((i=0; i<QUESTIONS_COUNT; i++)); do
-  python3 << EOF >> /tmp/question_${i}.sh
+  python3 << EOF > /tmp/question_${i}.sh
 import json
 question = json.load(open('$TEMP_JSON'))['open_questions'][$i]
-print(f"Q_QUESTION='{question.get('question', '')}'")
-print(f"Q_CONTEXT='{question.get('context', '')}'")
-print(f"Q_PRIORITY='{question.get('priority', '')}'")
+# Escape for bash: remove newlines, escape single quotes
+def bash_escape(s):
+    if not s:
+        return ""
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = s.replace("'", "'\\''")
+    return s
+print(f"Q_QUESTION='{bash_escape(question.get('question', ''))}'")
+print(f"Q_CONTEXT='{bash_escape(question.get('context', ''))}'")
+print(f"Q_PRIORITY='{bash_escape(question.get('priority', ''))}'")
 EOF
 
   source /tmp/question_${i}.sh
