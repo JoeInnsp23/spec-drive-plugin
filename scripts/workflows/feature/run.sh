@@ -10,6 +10,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SPEC_DRIVE_DIR="${SPEC_DRIVE_DIR:-.spec-drive}"
 STATE_FILE="$SPEC_DRIVE_DIR/state.yaml"
 
+# Check dependencies
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [[ -x "$PLUGIN_ROOT/scripts/check-dependencies.sh" ]]; then
+  "$PLUGIN_ROOT/scripts/check-dependencies.sh" || exit 1
+fi
+
 # Source workflow engine
 source "$SCRIPT_DIR/../workflow-engine.sh"
 
