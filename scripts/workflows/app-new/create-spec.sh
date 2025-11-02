@@ -106,24 +106,32 @@ echo -e "${BLUE}Processing $USERS_COUNT user types...${NC}"
 
 for ((i=0; i<USERS_COUNT; i++)); do
   # Extract user data using Python (escape for bash)
-  python3 << EOF > /tmp/user_${i}.sh
+  # Write Python script to file to avoid heredoc escaping issues
+  cat > /tmp/process_user_${i}.py << 'PYTHON_EOF'
 import json
-user = json.load(open('$TEMP_JSON'))['users'][$i]
+import sys
+user = json.load(open(sys.argv[1]))['users'][int(sys.argv[2])]
 # Escape for bash double-quoted strings
 def bash_escape(s):
     if not s:
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
-    # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    # For double-quoted strings: escape backslash, double quote, dollar, backtick
+    # Order matters: backslash first
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'USER_TYPE="{bash_escape(user.get("type", ""))}"')
 print(f'USER_ROLE="{bash_escape(user.get("role_context", ""))}"')
 print(f'USER_TECH_LEVEL="{bash_escape(user.get("technical_level", ""))}"')
 print(f'USER_INTERACTION="{bash_escape(user.get("interaction_patterns", ""))}"')
-EOF
+PYTHON_EOF
 
+  python3 /tmp/process_user_${i}.py "$TEMP_JSON" "$i" > /tmp/user_${i}.sh
   source /tmp/user_${i}.sh
+  rm -f /tmp/process_user_${i}.py
 
   yq eval -i ".users[$i].type = \"$USER_TYPE\" | \
     .users[$i].role_context = \"$USER_ROLE\" | \
@@ -150,16 +158,21 @@ echo -e "${BLUE}Processing $FEATURES_COUNT features...${NC}"
 
 for ((i=0; i<FEATURES_COUNT; i++)); do
   # Extract feature data (escape for bash)
-  python3 << EOF > /tmp/feature_${i}.sh
+  # Write Python script to file to avoid heredoc escaping issues
+  cat > /tmp/process_feature_${i}.py << 'PYTHON_EOF'
 import json
-feature = json.load(open('$TEMP_JSON'))['features'][$i]
+import sys
+feature = json.load(open(sys.argv[1]))['features'][int(sys.argv[2])]
 # Escape for bash double-quoted strings
 def bash_escape(s):
     if not s:
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
-    # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    # For double-quoted strings: escape backslash, double quote, dollar, backtick
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'FEAT_TITLE="{bash_escape(feature.get("title", ""))}"')
 print(f'FEAT_DESC="{bash_escape(feature.get("description", ""))}"')
@@ -168,9 +181,11 @@ print(f'FEAT_FLOW="{bash_escape(feature.get("user_flow", ""))}"')
 print(f'FEAT_PRIORITY="{bash_escape(feature.get("priority", "medium"))}"')
 print(f'FEAT_COMPLEXITY="{bash_escape(feature.get("complexity", "moderate"))}"')
 print(f'FEAT_MVP="{bash_escape(feature.get("mvp_scope", ""))}"')
-EOF
+PYTHON_EOF
 
+  python3 /tmp/process_feature_${i}.py "$TEMP_JSON" "$i" > /tmp/feature_${i}.sh
   source /tmp/feature_${i}.sh
+  rm -f /tmp/process_feature_${i}.py
 
   yq eval -i ".features[$i].title = \"$FEAT_TITLE\" | \
     .features[$i].description = \"$FEAT_DESC\" | \
@@ -349,16 +364,21 @@ done
 # Integrations
 INTEGRATIONS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_JSON'))['technical'].get('integrations', [])))")
 for ((i=0; i<INTEGRATIONS_COUNT; i++)); do
-  python3 << EOF > /tmp/integration_${i}.sh
+  # Write Python script to file to avoid heredoc escaping issues
+  cat > /tmp/process_integration_${i}.py << 'PYTHON_EOF'
 import json
-integration = json.load(open('$TEMP_JSON'))['technical']['integrations'][$i]
+import sys
+integration = json.load(open(sys.argv[1]))['technical']['integrations'][int(sys.argv[2])]
 # Escape for bash double-quoted strings
 def bash_escape(s):
     if not s:
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
-    # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    # For double-quoted strings: escape backslash, double quote, dollar, backtick
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'INT_SYSTEM="{bash_escape(integration.get("system", ""))}"')
 print(f'INT_PURPOSE="{bash_escape(integration.get("purpose", ""))}"')
@@ -366,9 +386,11 @@ print(f'INT_DATA="{bash_escape(integration.get("data_exchanged", ""))}"')
 print(f'INT_FREQ="{bash_escape(integration.get("frequency", ""))}"')
 print(f'INT_API="{str(integration.get("api_available", False)).lower()}"')
 print(f'INT_NOTES="{bash_escape(integration.get("notes", ""))}"')
-EOF
+PYTHON_EOF
 
+  python3 /tmp/process_integration_${i}.py "$TEMP_JSON" "$i" > /tmp/integration_${i}.sh
   source /tmp/integration_${i}.sh
+  rm -f /tmp/process_integration_${i}.py
 
   yq eval -i ".technical.integrations[$i].system = \"$INT_SYSTEM\" | \
     .technical.integrations[$i].purpose = \"$INT_PURPOSE\" | \
@@ -509,25 +531,32 @@ RISKS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_JSON
 echo -e "${BLUE}Processing $RISKS_COUNT risks...${NC}"
 
 for ((i=0; i<RISKS_COUNT; i++)); do
-  python3 << EOF > /tmp/risk_${i}.sh
+  # Write Python script to file to avoid heredoc escaping issues
+  cat > /tmp/process_risk_${i}.py << 'PYTHON_EOF'
 import json
-risk = json.load(open('$TEMP_JSON'))['risks'][$i]
+import sys
+risk = json.load(open(sys.argv[1]))['risks'][int(sys.argv[2])]
 # Escape for bash double-quoted strings
 def bash_escape(s):
     if not s:
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
-    # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    # For double-quoted strings: escape backslash, double quote, dollar, backtick
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'RISK_TYPE="{bash_escape(risk.get("type", ""))}"')
 print(f'RISK_DESC="{bash_escape(risk.get("description", ""))}"')
 print(f'RISK_LIKELIHOOD="{bash_escape(risk.get("likelihood", ""))}"')
 print(f'RISK_IMPACT="{bash_escape(risk.get("impact", ""))}"')
 print(f'RISK_MITIGATION="{bash_escape(risk.get("mitigation", ""))}"')
-EOF
+PYTHON_EOF
 
+  python3 /tmp/process_risk_${i}.py "$TEMP_JSON" "$i" > /tmp/risk_${i}.sh
   source /tmp/risk_${i}.sh
+  rm -f /tmp/process_risk_${i}.py
 
   yq eval -i ".risks[$i].type = \"$RISK_TYPE\" | \
     .risks[$i].description = \"$RISK_DESC\" | \
@@ -629,23 +658,30 @@ QUESTIONS_COUNT=$(python3 -c "import sys, json; print(len(json.load(open('$TEMP_
 echo -e "${BLUE}Processing $QUESTIONS_COUNT open questions...${NC}"
 
 for ((i=0; i<QUESTIONS_COUNT; i++)); do
-  python3 << EOF > /tmp/question_${i}.sh
+  # Write Python script to file to avoid heredoc escaping issues
+  cat > /tmp/process_question_${i}.py << 'PYTHON_EOF'
 import json
-question = json.load(open('$TEMP_JSON'))['open_questions'][$i]
+import sys
+question = json.load(open(sys.argv[1]))['open_questions'][int(sys.argv[2])]
 # Escape for bash double-quoted strings
 def bash_escape(s):
     if not s:
         return ""
     s = s.replace('\n', ' ').replace('\r', ' ')
-    # For double-quoted strings, escape backslash, double quote, dollar, backtick
-    s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+    # For double-quoted strings: escape backslash, double quote, dollar, backtick
+    s = s.replace('\\', '\\\\')  # backslash becomes double backslash
+    s = s.replace('"', '\\"')    # double quote becomes \"
+    s = s.replace('$', '\\$')    # dollar becomes \$
+    s = s.replace('`', '\\`')    # backtick becomes \`
     return s
 print(f'Q_QUESTION="{bash_escape(question.get("question", ""))}"')
 print(f'Q_CONTEXT="{bash_escape(question.get("context", ""))}"')
 print(f'Q_PRIORITY="{bash_escape(question.get("priority", ""))}"')
-EOF
+PYTHON_EOF
 
+  python3 /tmp/process_question_${i}.py "$TEMP_JSON" "$i" > /tmp/question_${i}.sh
   source /tmp/question_${i}.sh
+  rm -f /tmp/process_question_${i}.py
 
   yq eval -i ".open_questions[$i].question = \"$Q_QUESTION\" | \
     .open_questions[$i].context = \"$Q_CONTEXT\" | \
