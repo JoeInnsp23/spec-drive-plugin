@@ -11,9 +11,12 @@ SPEC_DRIVE_DIR="${SPEC_DRIVE_DIR:-.spec-drive}"
 STATE_FILE="$SPEC_DRIVE_DIR/state.yaml"
 
 # Check dependencies
-PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 if [[ -x "$PLUGIN_ROOT/scripts/check-dependencies.sh" ]]; then
   "$PLUGIN_ROOT/scripts/check-dependencies.sh" || exit 1
+else
+  echo -e "${YELLOW}⚠${NC}  Warning: Dependency check script not found at $PLUGIN_ROOT/scripts/check-dependencies.sh"
+  echo "Proceeding anyway, but errors may occur if dependencies are missing"
 fi
 
 # Source workflow engine
