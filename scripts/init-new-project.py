@@ -232,7 +232,7 @@ def create_spec_drive_gitignore():
     """Create .spec-drive/.gitignore"""
 
     gitignore_path = Path('.spec-drive/.gitignore')
-    gitignore_path.write_text('state.yaml\n')
+    gitignore_path.write_text('state.yaml\n.state.lock/\n')
     print(f"✓ Created: {gitignore_path}")
 
 def main():

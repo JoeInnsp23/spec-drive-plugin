@@ -26,7 +26,7 @@ set -eo pipefail
 SPEC_DRIVE_DIR="${SPEC_DRIVE_DIR:-.spec-drive}"
 STATE_FILE="$SPEC_DRIVE_DIR/state.yaml"
 STATE_SCHEMA="$SPEC_DRIVE_DIR/schemas/v0.1/state-schema.json"
-LOCK_FILE="$SPEC_DRIVE_DIR/.state.lock"
+LOCK_FILE="$SPEC_DRIVE_DIR/.state.lock"  # Now a directory for cross-platform locking
 
 # Stage progression function (bash 3.2+ compatible)
 # Returns next stage for a given current stage
@@ -41,18 +41,29 @@ get_next_stage() {
   esac
 }
 
-# Utility: Acquire file lock
+# Utility: Acquire file lock (cross-platform: macOS + Linux)
+# Uses mkdir as atomic operation instead of flock (not available on macOS)
 acquire_lock() {
-  exec 200>"$LOCK_FILE"
-  flock -x 200 || {
-    echo "❌ ERROR: Cannot acquire lock on state.yaml" >&2
-    exit 1
-  }
+  local max_wait=30
+  local waited=0
+
+  while ! mkdir "$LOCK_FILE" 2>/dev/null; do
+    if [[ $waited -ge $max_wait ]]; then
+      echo "❌ ERROR: Cannot acquire lock on state.yaml (timeout after ${max_wait}s)" >&2
+      echo "Another spec-drive process may be running. Wait or remove: $LOCK_FILE" >&2
+      exit 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+
+  # Store PID for debugging
+  echo $$ > "$LOCK_FILE/pid"
 }
 
 # Utility: Release file lock
 release_lock() {
-  flock -u 200 || true
+  rm -rf "$LOCK_FILE" 2>/dev/null || true
 }
 
 # Utility: Validate SPEC-ID format
