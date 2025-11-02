@@ -51,11 +51,43 @@ EOF
 }
 
 # Parse arguments
-PROJECT_NAME="${1:-}"
+PROJECT_NAME=""
+PROJECT_VISION=""
+KEY_FEATURES=""
+TARGET_USERS=""
+TECH_STACK=""
 
-if [[ "$PROJECT_NAME" == "--help" ]]; then
-  usage
-fi
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --help)
+      usage
+      ;;
+    --name)
+      PROJECT_NAME="$2"
+      shift 2
+      ;;
+    --vision)
+      PROJECT_VISION="$2"
+      shift 2
+      ;;
+    --features)
+      KEY_FEATURES="$2"
+      shift 2
+      ;;
+    --users)
+      TARGET_USERS="$2"
+      shift 2
+      ;;
+    --stack)
+      TECH_STACK="$2"
+      shift 2
+      ;;
+    *)
+      echo -e "${RED}❌ ERROR: Unknown argument: $1${NC}" >&2
+      usage
+      ;;
+  esac
+done
 
 # ==============================================================================
 # Prerequisite Checks
@@ -69,7 +101,7 @@ echo ""
 # Check 1: spec-drive initialized
 if [[ ! -d "$SPEC_DRIVE_DIR" ]]; then
   echo -e "${RED}❌ ERROR: spec-drive not initialized${NC}" >&2
-  echo "Run /spec-drive:spec-init first" >&2
+  echo "Run /spec-drive:init first" >&2
   exit 1
 fi
 
@@ -88,15 +120,31 @@ fi
 
 release_lock
 
-# Prompt for project name if not provided
+# Validate required arguments
 if [[ -z "$PROJECT_NAME" ]]; then
-  echo -e "${YELLOW}What is your project name?${NC}"
-  read -p "Project name: " PROJECT_NAME
+  echo -e "${RED}❌ ERROR: --name is required${NC}" >&2
+  echo "Usage: $0 --name <name> --vision <vision> --features <features> --users <users> --stack <stack>" >&2
+  exit 1
+fi
 
-  if [[ -z "$PROJECT_NAME" ]]; then
-    echo -e "${RED}❌ ERROR: Project name is required${NC}" >&2
-    exit 1
-  fi
+if [[ -z "$PROJECT_VISION" ]]; then
+  echo -e "${RED}❌ ERROR: --vision is required${NC}" >&2
+  exit 1
+fi
+
+if [[ -z "$KEY_FEATURES" ]]; then
+  echo -e "${RED}❌ ERROR: --features is required${NC}" >&2
+  exit 1
+fi
+
+if [[ -z "$TARGET_USERS" ]]; then
+  echo -e "${RED}❌ ERROR: --users is required${NC}" >&2
+  exit 1
+fi
+
+if [[ -z "$TECH_STACK" ]]; then
+  echo -e "${RED}❌ ERROR: --stack is required${NC}" >&2
+  exit 1
 fi
 
 # Validate project name (alphanumeric, dashes, underscores)
@@ -115,10 +163,15 @@ echo ""
 # ==============================================================================
 
 echo -e "${BLUE}Step 1/3: Planning Session${NC}"
-echo "Gathering requirements and creating APP-001 spec..."
+echo "Creating APP-001 spec..."
 echo ""
 
-if ! "$SCRIPT_DIR/planning-session.sh" "$PROJECT_NAME"; then
+if ! "$SCRIPT_DIR/planning-session.sh" \
+  --name "$PROJECT_NAME" \
+  --vision "$PROJECT_VISION" \
+  --features "$KEY_FEATURES" \
+  --users "$TARGET_USERS" \
+  --stack "$TECH_STACK"; then
   echo -e "${RED}❌ ERROR: Planning session failed${NC}" >&2
   exit 1
 fi

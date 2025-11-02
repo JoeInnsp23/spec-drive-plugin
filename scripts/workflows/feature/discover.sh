@@ -22,13 +22,46 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Arguments
+# Parse arguments
 FEATURE_TITLE="${1:-}"
+shift || true
+
+DESCRIPTION=""
+PRIORITY="medium"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --description)
+      DESCRIPTION="$2"
+      shift 2
+      ;;
+    --priority)
+      PRIORITY="$2"
+      shift 2
+      ;;
+    *)
+      echo -e "${RED}❌ ERROR: Unknown argument: $1${NC}" >&2
+      echo "Usage: $0 <feature-title> [--description <desc>] [--priority <low|medium|high|critical>]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [[ -z "$FEATURE_TITLE" ]]; then
   echo -e "${RED}❌ ERROR: Feature title is required${NC}" >&2
-  echo "Usage: $0 <feature-title>" >&2
+  echo "Usage: $0 <feature-title> [--description <desc>] [--priority <low|medium|high|critical>]" >&2
   exit 1
+fi
+
+# Default description to title if not provided
+if [[ -z "$DESCRIPTION" ]]; then
+  DESCRIPTION="$FEATURE_TITLE"
+fi
+
+# Validate priority
+if [[ ! "$PRIORITY" =~ ^(low|medium|high|critical)$ ]]; then
+  echo -e "${YELLOW}⚠${NC}  Invalid priority '$PRIORITY', using 'medium'"
+  PRIORITY="medium"
 fi
 
 # ==============================================================================
@@ -69,35 +102,7 @@ echo -e "${BLUE}Generating SPEC-ID...${NC}"
 SPEC_ID=$(generate_spec_id "$FEATURE_TITLE")
 
 echo -e "${GREEN}✓${NC} SPEC-ID: $SPEC_ID"
-echo ""
-
-# ==============================================================================
-# Prompt for Feature Details
-# ==============================================================================
-
-echo -e "${YELLOW}Feature: $FEATURE_TITLE${NC}"
-echo ""
-
-# Description
-echo -e "${YELLOW}Describe this feature in detail:${NC}"
-read -p "→ " DESCRIPTION
-
-if [[ -z "$DESCRIPTION" ]]; then
-  DESCRIPTION="$FEATURE_TITLE"
-fi
-
-echo ""
-
-# Priority
-echo -e "${YELLOW}Priority [low/medium/high/critical]:${NC}"
-read -p "→ " PRIORITY
-PRIORITY="${PRIORITY:-medium}"
-
-if [[ ! "$PRIORITY" =~ ^(low|medium|high|critical)$ ]]; then
-  echo -e "${YELLOW}⚠${NC}  Invalid priority, using 'medium'"
-  PRIORITY="medium"
-fi
-
+echo -e "${GREEN}✓${NC} Priority: $PRIORITY"
 echo ""
 
 # ==============================================================================

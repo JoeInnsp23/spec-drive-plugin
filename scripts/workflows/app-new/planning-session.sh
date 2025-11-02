@@ -1,7 +1,7 @@
 #!/bin/bash
 # planning-session.sh
-# Purpose: Interactive planning session for app-new workflow
-# Usage: ./planning-session.sh <project-name>
+# Purpose: Non-interactive planning session for app-new workflow
+# Usage: ./planning-session.sh --name <name> --vision <vision> --features <features> --users <users> --stack <stack>
 
 set -euo pipefail
 
@@ -18,91 +18,60 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Arguments
-PROJECT_NAME="${1:-}"
+# Parse arguments
+PROJECT_NAME=""
+PROJECT_VISION=""
+KEY_FEATURES_RAW=""
+TARGET_USERS=""
+TECH_STACK=""
 
-if [[ -z "$PROJECT_NAME" ]]; then
-  echo -e "${RED}❌ ERROR: Project name is required${NC}" >&2
-  echo "Usage: $0 <project-name>" >&2
-  exit 1
-fi
-
-# ==============================================================================
-# Planning Questions
-# ==============================================================================
-
-echo -e "${BLUE}📋 Planning Session${NC}"
-echo "Answer the following questions to define your project."
-echo ""
-
-# Question 1: Project Vision
-echo -e "${YELLOW}1. What are you building?${NC}"
-echo "   Describe your project vision in 1-2 sentences."
-echo ""
-read -p "→ " PROJECT_VISION
-
-if [[ -z "$PROJECT_VISION" ]]; then
-  echo -e "${RED}❌ ERROR: Project vision cannot be empty${NC}" >&2
-  exit 1
-fi
-
-echo ""
-
-# Question 2: Key Features
-echo -e "${YELLOW}2. What are the key features?${NC}"
-echo "   List 3-5 main features (press Enter after each, empty line to finish)"
-echo ""
-
-KEY_FEATURES=()
-feature_count=0
-
-while true; do
-  read -p "   Feature $((feature_count + 1)): " feature
-
-  if [[ -z "$feature" ]]; then
-    if [[ $feature_count -eq 0 ]]; then
-      echo -e "${RED}   At least one feature is required${NC}"
-      continue
-    else
-      break
-    fi
-  fi
-
-  KEY_FEATURES+=("$feature")
-  feature_count=$((feature_count + 1))
-
-  if [[ $feature_count -ge 5 ]]; then
-    echo "   (Maximum 5 features reached)"
-    break
-  fi
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --name)
+      PROJECT_NAME="$2"
+      shift 2
+      ;;
+    --vision)
+      PROJECT_VISION="$2"
+      shift 2
+      ;;
+    --features)
+      KEY_FEATURES_RAW="$2"
+      shift 2
+      ;;
+    --users)
+      TARGET_USERS="$2"
+      shift 2
+      ;;
+    --stack)
+      TECH_STACK="$2"
+      shift 2
+      ;;
+    *)
+      echo -e "${RED}❌ ERROR: Unknown argument: $1${NC}" >&2
+      exit 1
+      ;;
+  esac
 done
 
-echo ""
-
-# Question 3: Target Users
-echo -e "${YELLOW}3. Who are the target users?${NC}"
-echo "   Describe your primary user persona(s)."
-echo ""
-read -p "→ " TARGET_USERS
-
-if [[ -z "$TARGET_USERS" ]]; then
-  echo -e "${RED}❌ ERROR: Target users cannot be empty${NC}" >&2
+# Validate required arguments
+if [[ -z "$PROJECT_NAME" ]] || [[ -z "$PROJECT_VISION" ]] || [[ -z "$KEY_FEATURES_RAW" ]] || [[ -z "$TARGET_USERS" ]] || [[ -z "$TECH_STACK" ]]; then
+  echo -e "${RED}❌ ERROR: All arguments are required${NC}" >&2
+  echo "Usage: $0 --name <name> --vision <vision> --features <features> --users <users> --stack <stack>" >&2
   exit 1
 fi
 
-echo ""
+# Parse pipe-separated features into array
+IFS='|' read -ra KEY_FEATURES <<< "$KEY_FEATURES_RAW"
 
-# Question 4: Tech Stack
-echo -e "${YELLOW}4. What is your tech stack?${NC}"
-echo "   List primary technologies (e.g., Node.js, React, PostgreSQL)"
-echo ""
-read -p "→ " TECH_STACK
-
-if [[ -z "$TECH_STACK" ]]; then
-  echo -e "${RED}❌ ERROR: Tech stack cannot be empty${NC}" >&2
+# Validate at least one feature
+if [[ ${#KEY_FEATURES[@]} -eq 0 ]]; then
+  echo -e "${RED}❌ ERROR: At least one feature is required${NC}" >&2
   exit 1
 fi
 
+echo -e "${BLUE}📋 Planning Session${NC}"
+echo "Creating APP-001 spec with provided information..."
 echo ""
 
 # ==============================================================================

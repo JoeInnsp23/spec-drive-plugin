@@ -138,12 +138,41 @@ fi
 # ==============================================================================
 
 if [[ "$COMMAND" == "start" ]]; then
+  # Parse title (positional) and optional flags
   FEATURE_TITLE="${1:-}"
+  shift || true
+
+  DESCRIPTION=""
+  PRIORITY="medium"
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --description)
+        DESCRIPTION="$2"
+        shift 2
+        ;;
+      --priority)
+        PRIORITY="$2"
+        shift 2
+        ;;
+      *)
+        echo -e "${RED}❌ ERROR: Unknown argument for start: $1${NC}" >&2
+        echo "Usage: $0 start <title> [--description <desc>] [--priority <low|medium|high|critical>]" >&2
+        exit 1
+        ;;
+    esac
+  done
 
   if [[ -z "$FEATURE_TITLE" ]]; then
     echo -e "${RED}❌ ERROR: Feature title is required${NC}" >&2
-    echo "Usage: $0 start <title>" >&2
+    echo "Usage: $0 start <title> [--description <desc>] [--priority <low|medium|high|critical>]" >&2
     exit 1
+  fi
+
+  # Validate priority
+  if [[ ! "$PRIORITY" =~ ^(low|medium|high|critical)$ ]]; then
+    echo -e "${YELLOW}⚠${NC}  Invalid priority '$PRIORITY', using 'medium'" >&2
+    PRIORITY="medium"
   fi
 
   echo -e "${BLUE}================================================${NC}"
@@ -167,7 +196,13 @@ if [[ "$COMMAND" == "start" ]]; then
   echo "Creating feature specification..."
   echo ""
 
-  if ! "$SCRIPT_DIR/discover.sh" "$FEATURE_TITLE"; then
+  # Pass all data to discover.sh
+  DISCOVER_ARGS=("$FEATURE_TITLE" "--priority" "$PRIORITY")
+  if [[ -n "$DESCRIPTION" ]]; then
+    DISCOVER_ARGS+=("--description" "$DESCRIPTION")
+  fi
+
+  if ! "$SCRIPT_DIR/discover.sh" "${DISCOVER_ARGS[@]}"; then
     echo -e "${RED}❌ ERROR: Discover stage failed${NC}" >&2
     exit 1
   fi

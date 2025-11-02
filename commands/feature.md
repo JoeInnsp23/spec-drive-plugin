@@ -13,39 +13,85 @@ Manage feature development through a 4-stage workflow:
 3. **Implement** - Write code and tests
 4. **Verify** - Run quality gates, update docs
 
-**Commands:**
+**Prerequisites:**
+- spec-drive initialized (/spec-drive:init)
+- For app-new projects: Complete /spec-drive:app-new first
 
-**Start a new feature:**
-```
-/spec-drive:feature start <title>
-```
+---
 
-**Advance to next stage:**
-```
-/spec-drive:feature advance
-```
+## Commands
 
-**Check workflow status:**
-```
-/spec-drive:feature status
+### 1. Start a New Feature
+
+**IMPORTANT:** For the `start` command, gather ALL information BEFORE running the script.
+
+#### Step 1: Gather Feature Information
+
+Ask the user for the following (use AskUserQuestion or natural conversation):
+
+1. **Feature title** (required)
+   - Clear, descriptive name for the feature
+
+2. **Feature description** (optional)
+   - Detailed description of what this feature does
+   - If not provided, will default to the title
+
+3. **Priority** (optional)
+   - Options: low, medium, high, critical
+   - If not provided, will default to "medium"
+
+#### Step 2: Run Non-Interactive Script
+
+Once you have the information, run:
+
+```bash
+!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh start "<title>" \
+  [--description "<detailed description>"] \
+  [--priority <low|medium|high|critical>]
 ```
 
 **Examples:**
-```
-/spec-drive:feature start "User authentication"
-/spec-drive:feature advance
-/spec-drive:feature status
+```bash
+# Minimal (uses defaults)
+!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh start "User authentication"
+
+# With all options
+!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh start "User authentication" \
+  --description "OAuth2-based authentication with Google and GitHub providers" \
+  --priority "high"
 ```
 
-**Stage Details:**
+---
+
+### 2. Advance to Next Stage
+
+No data gathering needed - runs directly:
+
+```bash
+!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh advance
+```
+
+---
+
+### 3. Check Workflow Status
+
+No data gathering needed - runs directly:
+
+```bash
+!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh status
+```
+
+---
+
+## Stage Details
 
 1. **Discover**: Create spec YAML with requirements
-   - Prompts for feature description
    - Generates unique SPEC-ID (e.g., AUTH-001)
    - Creates spec file in .spec-drive/specs/
+   - Creates development structure in .spec-drive/development/current/
 
 2. **Specify**: Define acceptance criteria
-   - Add testable acceptance criteria
+   - Add testable acceptance criteria to spec
    - Define success metrics
    - Advance when criteria complete
 
@@ -59,12 +105,5 @@ Manage feature development through a 4-stage workflow:
    - Run quality gate checks
    - Update documentation
    - Complete traceability
+   - Archive to .spec-drive/development/completed/
    - Mark workflow complete
-
-**Prerequisites:**
-- spec-drive initialized (/spec-drive:spec-init)
-- For app-new projects: Complete /spec-drive:app-new first
-
----
-
-!bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflows/feature/run.sh "$@"
