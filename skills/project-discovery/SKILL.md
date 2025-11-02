@@ -30,6 +30,7 @@ Conduct a 6-phase interview combining structured questions (via AskUserQuestion 
 
 ### Interview Principles
 
+- **Use AskUserQuestion tool for structured questions** - Use the tool ONLY for multiple-choice questions (priority, complexity, tech stack, timeline). For open-ended questions, ask the user directly in your response.
 - **Ask "why"** - Uncover motivations and value, not just features
 - **Be curious** - Follow interesting threads, explore edge cases
 - **Validate assumptions** - Confirm understanding with user
@@ -46,7 +47,7 @@ Conduct a 6-phase interview combining structured questions (via AskUserQuestion 
 
 Use AskUserQuestion tool to get the project name (single question with header "Name", one option "Enter manually").
 
-Then ask conversationally:
+Ask the user directly in your response:
 - "What are you building?" (1-2 sentence description)
 - "Why are you building it? What problem does it solve?"
 - "What sparked this idea?" (inspiration/motivation)
@@ -74,10 +75,10 @@ Then ask conversationally:
 
 ### Questions to Ask
 
-Start conversationally:
+Ask the user directly in your response:
 - "Who will use this? List all user types/personas"
 
-For EACH user type identified, ask:
+For EACH user type identified, ask the user directly:
 - "What is their role/context?"
 - "What are they trying to accomplish?" (goals)
 - "What frustrates them today?" (pain points)
@@ -113,14 +114,14 @@ For each user:
 
 ### Questions to Ask
 
-Start conversationally:
+Ask the user directly in your response:
 - "What are the key features? List 5-10 core features"
 
 For EACH feature identified, use AskUserQuestion tool twice:
 1. Priority question (header "Priority", options: Critical/High/Medium/Nice-to-have with descriptions)
 2. Complexity question (header "Complexity", options: Simple/Moderate/Complex with descriptions)
 
-Then ask conversationally for each feature:
+Then ask the user directly for each feature:
 - "Why is this feature important? What user value does it deliver?"
 - "Describe the functionality"
 - "Walk me through the user flow step-by-step"
@@ -173,7 +174,7 @@ Use AskUserQuestion tool to ask three tech stack questions in one call:
 2. Framework (header "Framework", options: Next.js/FastAPI/Express/Django/Spring Boot with descriptions)
 3. Database (header "Database", options: PostgreSQL/MongoDB/MySQL/SQLite/Redis with descriptions)
 
-Then ask conversationally:
+Then ask the user directly in your response:
 - "Why did you choose [LANGUAGE]?"
 - "Why [FRAMEWORK]?"
 - "Why [DATABASE]?"
@@ -229,7 +230,7 @@ Then ask conversationally:
 
 Use AskUserQuestion tool for timeline (header "Timeline", options: Hard deadline/Soft target/No deadline with descriptions).
 
-Then ask conversationally:
+Then ask the user directly in your response:
 - "When is the target date?" (if deadline exists)
 - "What's driving this timeline?"
 - "Are there milestones or phases?"
@@ -270,7 +271,7 @@ Then ask conversationally:
 
 ### Questions to Ask
 
-Ask conversationally:
+Ask the user directly in your response:
 - "What's the minimum viable product? What can you cut and still deliver value?"
 - "What must be in v1?"
 - "How will you measure success? What KPIs?"
