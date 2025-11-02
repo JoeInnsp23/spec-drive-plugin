@@ -3,15 +3,49 @@
 # PostToolUse hook for spec-drive plugin
 # Sets dirty flag when code/docs are modified
 
-set -eo pipefail
+# NOTE: Don't use 'set -e' in hooks - we must always return success to avoid crashing Claude Code
+set -o pipefail
 
 # Hook receives tool information via environment variables:
 # - TOOL_NAME: Name of the tool that was used (Write, Edit, Delete, etc.)
 # - TOOL_OUTPUT: Output from the tool
 # - TOOL_ERROR: Error from the tool (if any)
 
+# Constants
+SPEC_DRIVE_DIR=".spec-drive"
+STATE_FILE="$SPEC_DRIVE_DIR/state.yaml"
+LOCK_FILE="$SPEC_DRIVE_DIR/.state.lock"
+
+# Utility: Acquire lock with short timeout for hooks
+# Returns 0 on success, 1 on failure (caller should handle gracefully)
+acquire_lock() {
+  local max_wait=2  # Short timeout for hooks (total hook timeout is 5s)
+  local waited=0
+
+  while ! mkdir "$LOCK_FILE" 2>/dev/null; do
+    if [[ $waited -ge $max_wait ]]; then
+      # Lock acquisition failed - return failure but don't crash
+      return 1
+    fi
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+
+  # Store PID for debugging
+  echo $$ > "$LOCK_FILE/pid" 2>/dev/null || true
+  return 0
+}
+
+# Utility: Release lock
+release_lock() {
+  rm -rf "$LOCK_FILE" 2>/dev/null || true
+}
+
+# Ensure lock is always released on exit
+trap release_lock EXIT
+
 # Only proceed if we're in a project with spec-drive initialized
-if [[ ! -d ".spec-drive" ]]; then
+if [[ ! -d "$SPEC_DRIVE_DIR" ]]; then
   # Not a spec-drive project, skip silently
   cat << 'EOF'
 {
@@ -22,31 +56,49 @@ EOF
 fi
 
 # Check if state.yaml exists, create if missing
-STATE_FILE=".spec-drive/state.yaml"
 if [[ ! -f "$STATE_FILE" ]]; then
-  # Create minimal state file
-  mkdir -p .spec-drive
-  cat > "$STATE_FILE" << 'YAML'
+  # Try to acquire lock (short timeout)
+  if acquire_lock; then
+    # Create full state schema matching workflow-engine.sh expectations
+    mkdir -p "$SPEC_DRIVE_DIR"
+    cat > "$STATE_FILE" << 'YAML'
+current_workflow: null
+current_stage: null
+current_spec: null
+can_advance: false
 dirty: false
-last_update: null
+workflows: {}
 YAML
+    release_lock
+  else
+    # Lock acquisition failed - skip state creation, return success
+    cat << 'EOF'
+{
+  "hookEventName": "PostToolUse"
+}
+EOF
+    exit 0
+  fi
 fi
 
 # Set dirty flag for Write/Edit/Delete tools
 if [[ "$TOOL_NAME" =~ ^(Write|Edit|Delete)$ ]]; then
-  # Use yq to set dirty flag
-  if command -v yq &>/dev/null; then
-    yq eval '.dirty = true | .last_update = now' -i "$STATE_FILE" 2>/dev/null || {
-      # Fallback: simple sed replacement
-      sed -i 's/^dirty: .*/dirty: true/' "$STATE_FILE" 2>/dev/null || true
-    }
-  else
-    # Fallback: simple sed replacement if yq not available
-    sed -i 's/^dirty: .*/dirty: true/' "$STATE_FILE" 2>/dev/null || true
+  # Try to acquire lock
+  if acquire_lock; then
+    # Use yq to set dirty flag
+    if command -v yq &>/dev/null; then
+      yq eval '.dirty = true' -i "$STATE_FILE" 2>/dev/null || true
+    else
+      # Fallback: simple sed replacement if yq not available
+      sed -i.bak 's/^dirty: .*/dirty: true/' "$STATE_FILE" 2>/dev/null || true
+      rm -f "$STATE_FILE.bak" 2>/dev/null || true
+    fi
+    release_lock
   fi
+  # If lock acquisition fails, skip silently - don't crash Claude Code
 fi
 
-# Return success
+# Always return success
 cat << 'EOF'
 {
   "hookEventName": "PostToolUse"
