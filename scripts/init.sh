@@ -4,9 +4,18 @@
 # Called by: /spec-drive:init command via !bash
 #
 # This script orchestrates the initialization process
+#
+# Usage: init.sh [--setup-alias]
 
 set -e  # Exit on error
 set -u  # Exit on undefined variable
+
+# Parse arguments
+SETUP_ALIAS="no"
+if [[ "${1:-}" == "--setup-alias" ]]; then
+  SETUP_ALIAS="yes"
+  shift || true
+fi
 
 # Derive plugin root from script location
 # This script is in <plugin-root>/scripts/init.sh
@@ -68,46 +77,21 @@ setup_strict_concise_alias() {
     CURRENT_ALIAS=$(grep "^alias claude-sc=" "${RC_FILE}" 2>/dev/null || echo "")
   fi
 
-  # 5. Determine if update needed
+  # 5. Add alias if requested and missing
   if [[ -z "${CURRENT_ALIAS}" ]]; then
     # Alias doesn't exist
-    echo ""
-    log_info "claude-sc alias not found in ${RC_FILE}"
-    echo "  Would add: ${EXPECTED_ALIAS}"
-    read -p "  Add this alias? (y/n): " -n 1 -r
-    echo ""
-
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ "${SETUP_ALIAS}" == "yes" ]]; then
       echo "" >> "${RC_FILE}"
       echo "# spec-drive: claude-sc alias for strict-concise behavior" >> "${RC_FILE}"
       echo "${EXPECTED_ALIAS}" >> "${RC_FILE}"
       log_success "✓ Added claude-sc alias to ${RC_FILE}"
       log_info "  Run: source ${RC_FILE}  # to activate"
     else
-      log_info "Skipped alias setup"
+      log_info "✓ Alias setup skipped (not requested)"
     fi
-
-  elif [[ "${CURRENT_ALIAS}" != "${EXPECTED_ALIAS}" ]]; then
-    # Alias exists but different
-    echo ""
-    log_warning "claude-sc alias exists but points to different file:"
-    echo "  Current: ${CURRENT_ALIAS}"
-    echo "  Expected: ${EXPECTED_ALIAS}"
-    read -p "  Update alias? (y/n): " -n 1 -r
-    echo ""
-
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      # Replace the line
-      sed -i "s|^alias claude-sc=.*|${EXPECTED_ALIAS}|" "${RC_FILE}"
-      log_success "✓ Updated claude-sc alias in ${RC_FILE}"
-      log_info "  Run: source ${RC_FILE}  # to activate"
-    else
-      log_info "Skipped alias update"
-    fi
-
   else
-    # Alias correct
-    log_success "✓ claude-sc alias configured correctly"
+    # Alias exists - respect user's existing setup
+    log_success "✓ claude-sc alias already configured"
   fi
 }
 

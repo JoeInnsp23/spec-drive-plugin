@@ -67,6 +67,12 @@ def scaffold_folders():
 
     folders = [
         '.spec-drive/specs',
+        '.spec-drive/development/current/tasks',
+        '.spec-drive/development/current/adr',
+        '.spec-drive/development/planned',
+        '.spec-drive/development/completed',
+        '.spec-drive/development/archive',
+        '.spec-drive/templates/planning',
         'docs/00-overview',
         'docs/10-architecture',
         'docs/20-build',
@@ -187,6 +193,22 @@ def create_index(project_info):
 
     print(f"✓ Created: {index_path}")
 
+def copy_planning_templates():
+    """Copy planning templates from plugin to project"""
+
+    source_dir = Path(PLUGIN_ROOT) / '.spec-drive' / 'templates' / 'planning'
+    target_dir = Path('.spec-drive/templates/planning')
+
+    if not source_dir.exists():
+        print(f"⚠️  Planning templates not found in plugin")
+        return
+
+    # Copy all template files
+    for template_file in source_dir.glob('*.md'):
+        target_file = target_dir / template_file.name
+        target_file.write_text(template_file.read_text())
+        print(f"✓ Copied: {target_file}")
+
 def create_gitignore_entry():
     """Add .spec-drive/state.yaml to .gitignore"""
 
@@ -234,19 +256,24 @@ def main():
         scaffold_folders()
         print("")
 
-        # 4. Templates
+        # 4. Copy planning templates
+        print("Copying planning templates...")
+        copy_planning_templates()
+        print("")
+
+        # 5. Populate doc templates
         print("Populating templates...")
         populate_templates(project_info, stack)
         print("")
 
-        # 5. Config
+        # 6. Config
         print("Creating configuration...")
         create_config(project_info, stack)
         create_state()
         create_index(project_info)
         print("")
 
-        # 6. .gitignore
+        # 7. .gitignore
         print("Updating .gitignore...")
         create_gitignore_entry()
         create_spec_drive_gitignore()

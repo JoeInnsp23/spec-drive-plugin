@@ -148,6 +148,35 @@ EOF
 echo -e "${GREEN}✓${NC} Created: $SPECS_DIR/$SPEC_ID.yaml"
 
 # ==============================================================================
+# Create Development Structure for Feature
+# ==============================================================================
+
+echo -e "${BLUE}Creating development structure...${NC}"
+
+DEV_FEATURE_DIR="$SPEC_DRIVE_DIR/development/current/$SPEC_ID"
+mkdir -p "$DEV_FEATURE_DIR/tasks"
+mkdir -p "$DEV_FEATURE_DIR/adr"
+
+# Copy planning templates if available
+TEMPLATES_DIR="$SPEC_DRIVE_DIR/templates/planning"
+if [[ -d "$TEMPLATES_DIR" ]]; then
+  if [[ -f "$TEMPLATES_DIR/PRD-TEMPLATE.md" ]]; then
+    cp "$TEMPLATES_DIR/PRD-TEMPLATE.md" "$DEV_FEATURE_DIR/PRD.md"
+    # Replace placeholders
+    sed -i "s/{{SPEC_ID}}/$SPEC_ID/g" "$DEV_FEATURE_DIR/PRD.md" 2>/dev/null || true
+    sed -i "s/{{TITLE}}/$FEATURE_TITLE/g" "$DEV_FEATURE_DIR/PRD.md" 2>/dev/null || true
+    echo -e "${GREEN}✓${NC} Created: $DEV_FEATURE_DIR/PRD.md"
+  fi
+
+  if [[ -f "$TEMPLATES_DIR/TASK-TEMPLATE.md" ]]; then
+    cp "$TEMPLATES_DIR/TASK-TEMPLATE.md" "$DEV_FEATURE_DIR/tasks/README.md"
+    echo -e "${GREEN}✓${NC} Created: $DEV_FEATURE_DIR/tasks/README.md"
+  fi
+fi
+
+echo -e "${GREEN}✓${NC} Development structure created"
+
+# ==============================================================================
 # Update SPECS-INDEX
 # ==============================================================================
 
