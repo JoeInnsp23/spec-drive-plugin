@@ -30,7 +30,7 @@ Conduct a 6-phase interview combining structured questions (via AskUserQuestion 
 
 ### Interview Principles
 
-- **Use AskUserQuestion tool for structured questions** - Use the tool ONLY for multiple-choice questions (priority, complexity, tech stack, timeline). For open-ended questions, ask the user directly in your response.
+- **Use AskUserQuestion tool for ALL questions** - Every question goes through AskUserQuestion tool. For open-ended questions, use a single "Enter manually" option. For multiple-choice questions, provide the actual options.
 - **Ask "why"** - Uncover motivations and value, not just features
 - **Be curious** - Follow interesting threads, explore edge cases
 - **Validate assumptions** - Confirm understanding with user
@@ -45,13 +45,13 @@ Conduct a 6-phase interview combining structured questions (via AskUserQuestion 
 
 ### Questions to Ask
 
-Use AskUserQuestion tool to get the project name (single question with header "Name", one option "Enter manually").
+Use AskUserQuestion tool for each question below (each with single "Enter manually" option):
 
-Ask the user directly in your response:
-- "What are you building?" (1-2 sentence description)
-- "Why are you building it? What problem does it solve?"
-- "What sparked this idea?" (inspiration/motivation)
-- "How will you measure success? What metrics matter?"
+1. Project name (header "Name")
+2. What are you building? (header "Description", ask for 1-2 sentence description)
+3. Why are you building it? What problem does it solve? (header "Problem")
+4. What sparked this idea? (header "Inspiration")
+5. How will you measure success? What metrics matter? (header "Metrics")
 
 ### Follow-Up Prompts
 
@@ -75,18 +75,17 @@ Ask the user directly in your response:
 
 ### Questions to Ask
 
-Ask the user directly in your response:
-- "Who will use this? List all user types/personas"
+Use AskUserQuestion tool to ask: "Who will use this? List all user types/personas" (header "Users", single "Enter manually" option).
 
-For EACH user type identified, ask the user directly:
-- "What is their role/context?"
-- "What are they trying to accomplish?" (goals)
-- "What frustrates them today?" (pain points)
-- "What do they need from this tool?" (needs)
-- "How/when/where will they use this?" (interaction patterns)
-- "What alternatives are they using now?"
+For EACH user type identified, use AskUserQuestion tool for these questions (each with single "Enter manually" option unless specified):
 
-Then use AskUserQuestion tool for each user type's technical level (header "Tech Level", options: Beginner/Intermediate/Advanced/Expert with descriptions).
+1. What is their role/context? (header "Role")
+2. What are they trying to accomplish? (header "Goals")
+3. What frustrates them today? (header "Pain Points")
+4. What do they need from this tool? (header "Needs")
+5. How/when/where will they use this? (header "Usage Context")
+6. What alternatives are they using now? (header "Alternatives")
+7. Technical level (header "Tech Level", options: Beginner/Intermediate/Advanced/Expert with descriptions)
 
 ### Follow-Up Prompts
 
@@ -114,20 +113,18 @@ For each user:
 
 ### Questions to Ask
 
-Ask the user directly in your response:
-- "What are the key features? List 5-10 core features"
+Use AskUserQuestion tool to ask: "What are the key features? List 5-10 core features" (header "Features", single "Enter manually" option).
 
-For EACH feature identified, use AskUserQuestion tool twice:
-1. Priority question (header "Priority", options: Critical/High/Medium/Nice-to-have with descriptions)
-2. Complexity question (header "Complexity", options: Simple/Moderate/Complex with descriptions)
+For EACH feature identified, use AskUserQuestion tool for these questions:
 
-Then ask the user directly for each feature:
-- "Why is this feature important? What user value does it deliver?"
-- "Describe the functionality"
-- "Walk me through the user flow step-by-step"
-- "What does this feature depend on?"
-- "What could go wrong? Any risks?"
-- "Any edge cases to consider?"
+1. Priority (header "Priority", options: Critical/High/Medium/Nice-to-have with descriptions)
+2. Complexity (header "Complexity", options: Simple/Moderate/Complex with descriptions)
+3. Why is this feature important? What user value does it deliver? (header "Value", single "Enter manually" option)
+4. Describe the functionality (header "Functionality", single "Enter manually" option)
+5. Walk me through the user flow step-by-step (header "User Flow", single "Enter manually" option)
+6. What does this feature depend on? (header "Dependencies", single "Enter manually" option)
+7. What could go wrong? Any risks? (header "Risks", single "Enter manually" option)
+8. Any edge cases to consider? (header "Edge Cases", single "Enter manually" option)
 
 ### Follow-Up Prompts
 
@@ -169,24 +166,26 @@ For each feature:
 
 ### Questions to Ask
 
-Use AskUserQuestion tool to ask three tech stack questions in one call:
+Use AskUserQuestion tool for these tech stack questions (can be in one call or separate):
+
 1. Language (header "Language", options: TypeScript/Python/Go/Rust/Java with descriptions)
 2. Framework (header "Framework", options: Next.js/FastAPI/Express/Django/Spring Boot with descriptions)
 3. Database (header "Database", options: PostgreSQL/MongoDB/MySQL/SQLite/Redis with descriptions)
 
-Then ask the user directly in your response:
-- "Why did you choose [LANGUAGE]?"
-- "Why [FRAMEWORK]?"
-- "Why [DATABASE]?"
-- "What's the high-level architecture?" (monolith/microservices/serverless)
-- "Any architectural constraints or compliance requirements?" (HIPAA, SOC2, GDPR)
-- "What data needs to be stored? Any sensitive/PII data?"
-- "Expected scale - users, data volume, traffic?"
-- "Authentication approach?" (OAuth, JWT, email/password, SSO)
-- "Any role-based permissions needed? What roles?"
-- "Does this integrate with other systems? Which ones and how?"
-- "Where will this run?" (cloud provider, on-prem)
-- "Any performance requirements?"
+Then use AskUserQuestion tool for each of these (each with single "Enter manually" option):
+
+4. Why did you choose [LANGUAGE]? (header "Language Rationale")
+5. Why [FRAMEWORK]? (header "Framework Rationale")
+6. Why [DATABASE]? (header "Database Rationale")
+7. What's the high-level architecture? (header "Architecture", mention monolith/microservices/serverless)
+8. Any architectural constraints or compliance requirements? (header "Compliance", mention HIPAA/SOC2/GDPR)
+9. What data needs to be stored? Any sensitive/PII data? (header "Data")
+10. Expected scale - users, data volume, traffic? (header "Scale")
+11. Authentication approach? (header "Auth", mention OAuth/JWT/email/SSO)
+12. Any role-based permissions needed? What roles? (header "Permissions")
+13. Does this integrate with other systems? Which ones and how? (header "Integrations")
+14. Where will this run? (header "Hosting", mention cloud/on-prem)
+15. Any performance requirements? (header "Performance")
 
 ### Follow-Up Prompts
 
@@ -228,18 +227,21 @@ Then ask the user directly in your response:
 
 ### Questions to Ask
 
-Use AskUserQuestion tool for timeline (header "Timeline", options: Hard deadline/Soft target/No deadline with descriptions).
+Use AskUserQuestion tool for these questions:
 
-Then ask the user directly in your response:
-- "When is the target date?" (if deadline exists)
-- "What's driving this timeline?"
-- "Are there milestones or phases?"
-- "Who's working on this? Team size and roles?"
-- "Any skill gaps on the team?"
-- "Any budget constraints?"
-- "What technical unknowns worry you?"
-- "What could derail this project?"
-- "What's the biggest uncertainty?"
+1. Timeline (header "Timeline", options: Hard deadline/Soft target/No deadline with descriptions)
+
+Then use AskUserQuestion tool for each of these (each with single "Enter manually" option):
+
+2. When is the target date? (header "Target Date", if deadline exists)
+3. What's driving this timeline? (header "Timeline Drivers")
+4. Are there milestones or phases? (header "Milestones")
+5. Who's working on this? Team size and roles? (header "Team")
+6. Any skill gaps on the team? (header "Skill Gaps")
+7. Any budget constraints? (header "Budget")
+8. What technical unknowns worry you? (header "Technical Unknowns")
+9. What could derail this project? (header "Derailers")
+10. What's the biggest uncertainty? (header "Biggest Uncertainty")
 
 ### Follow-Up Prompts
 
@@ -271,14 +273,15 @@ Then ask the user directly in your response:
 
 ### Questions to Ask
 
-Ask the user directly in your response:
-- "What's the minimum viable product? What can you cut and still deliver value?"
-- "What must be in v1?"
-- "How will you measure success? What KPIs?"
-- "What would make this a home run?"
-- "What's the long-term vision?"
-- "What comes after MVP?"
-- "Any blue-sky features for later?"
+Use AskUserQuestion tool for each of these questions (each with single "Enter manually" option):
+
+1. What's the minimum viable product? What can you cut and still deliver value? (header "MVP")
+2. What must be in v1? (header "V1 Must-Haves")
+3. How will you measure success? What KPIs? (header "Success Metrics")
+4. What would make this a home run? (header "Home Run")
+5. What's the long-term vision? (header "Long-term Vision")
+6. What comes after MVP? (header "Post-MVP")
+7. Any blue-sky features for later? (header "Future Features")
 
 ### Follow-Up Prompts
 
